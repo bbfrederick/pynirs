@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+import numpy as np 
+import pywt 
+import random 
+import pylab as plt 
+from statsmodels.robust import mad
+from scipy.special import erfinv
+
+# applies the wavelet transform to the signal, then thresholds
+# the coefficients to reduce noise
+def nirs_motionfilt(data, pvalue=0.05, thewavelet='db8', verbose=False):
+    if verbose:
+        print('applying forward wavelet transform...')
+
+    # apply the wavelet tranform to each column (fNIRS channel)
+    coeffs = pywt.wavedec(data, thewavelet, mode='per')
+
+    # define the soft threshold for the coefficients
+    uthresh = []
+    for i in range(1, len(coeffs)):
+        print(len(coeffs[i]), 'coefficients at level', i)
+        sigma = mad(coeffs[i])
+        uthresh.append(np.sqrt(2.0) * erfinv(1.0 - pvalue) * sigma)
+        if verbose:
+            print('at scale', i, 'sigma=', sigma, 'uthresh=', uthresh[-1])
+
+    # apply the threshold and reconstruct the signal
+    denoised = coeffs[:]
+    for j in range(1,len(denoised)):
+        denoised[j] = np.where(abs(coeffs[j]) > uthresh[j - 1], 0.0, coeffs[j])
+        plt.plot(coeffs[j])
+        plt.plot(denoised[j] + 1.0)
+        plt.show()
+    new_data = pywt.waverec(denoised, thewavelet, mode='per')
+ 
+    if verbose:
+        print('done')
+    return new_data
+
+def main(): 
+   (cA, cD) = pywt.dwt([1,2,3,4,5,6,7,8,9,10], 'db2', 'sp1') 
+   for i,coeff in enumerate(cA): 
+       print(i,coeff,cD[i])
+   print(pywt.idwt(cA, cD, 'db2', 'sp1'))
+   #[ 1.  2.  3.  4.  5.  6.] 
+
+   # construct a sin wave and add noise 
+   puresig=np.sin(np.arange(0,60,.001)) 
+   noisesig=np.random.rand(len(puresig))-.5  # subtract .5 offsets the noise values to the interval -.5 to .5 
+   testsig=puresig+.2*noisesig # add the noise to the signal 
+   numspikes = 10
+   for i in range(0, numspikes):
+       testsig[int(len(testsig) * np.random.rand())] += 10.0 * (np.random.rand() - 0.5)
+   print('length of signal vectors =',len(puresig),len(noisesig),len(testsig))
+
+   recon2 = nirs_motionfilt(testsig, pvalue=0.05, thewavelet='db8', verbose=True)
+   plt.plot(puresig,'k') 
+   plt.plot(1.0 + testsig,'b') 
+   offset = 2.0
+   plt.plot(offset + recon2,'g') 
+   offset += 1
+
+   plt.show() 
+
+if __name__ == '__main__': 
+   main() 
