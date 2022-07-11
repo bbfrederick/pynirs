@@ -135,6 +135,10 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# Version stuff
+__gittag.py
+.git*
+
 # Pyre type checker
 .pyre/
 
