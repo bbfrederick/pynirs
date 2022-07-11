@@ -101,42 +101,39 @@ CARD_UPPERSTOP = 3.0
 
 
 def version():
-    return '$Id: cbv_funcs.py,v 1.1.1.1 2016/03/18 18:54:44 frederic Exp $'
+    return "$Id: cbv_funcs.py,v 1.1.1.1 2016/03/18 18:54:44 frederic Exp $"
 
 
 # ---------------------------------------- NIFTI file manipulation ---------------------------
 if nibabelexists:
+
     def readfromnifti(inputfile):
         nim = nib.load(inputfile)
         nim_data = nim.get_data()
         nim_hdr = nim.get_header()
-        thedims = nim_hdr['dim']
-        thesizes = nim_hdr['pixdim']
+        thedims = nim_hdr["dim"]
+        thesizes = nim_hdr["pixdim"]
         return nim, nim_data, nim_hdr, thedims, thesizes
-
 
     def parseniftidims(thedims):
         return thedims[1], thedims[2], thedims[3], thedims[4]
 
-
     def parseniftisizes(thesizes):
         return thesizes[1], thesizes[2], thesizes[3], thesizes[4]
-
 
     def savetonifti(thearray, theheader, thepixdim, thename):
         outputaffine = theheader.get_best_affine()
         qaffine, qcode = theheader.get_qform(coded=True)
         saffine, scode = theheader.get_sform(coded=True)
-        if theheader['magic'] == 'n+2':
+        if theheader["magic"] == "n+2":
             output_nifti = nib.Nifti2Image(thearray, outputaffine, header=theheader)
-            suffix = '.nii'
+            suffix = ".nii"
         else:
             output_nifti = nib.Nifti1Image(thearray, outputaffine, header=theheader)
-            suffix = '.nii.gz'
+            suffix = ".nii.gz"
         output_nifti.set_qform(qaffine, code=int(qcode))
         output_nifti.set_sform(saffine, code=int(scode))
         output_nifti.to_filename(thename + suffix)
-
 
     def checkifnifti(filename):
         if filename.endswith(".nii") or filename.endswith(".nii.gz"):
@@ -144,19 +141,17 @@ if nibabelexists:
         else:
             return False
 
-
     def fmritimeinfo(niftifilename):
         nim = nib.load(niftifilename)
         hdr = nim.get_header()
-        thedims = hdr['dim']
-        thesizes = hdr['pixdim']
-        if hdr.get_xyzt_units()[1] == 'msec':
+        thedims = hdr["dim"]
+        thesizes = hdr["pixdim"]
+        if hdr.get_xyzt_units()[1] == "msec":
             tr = thesizes[4] / 1000.0
         else:
             tr = thesizes[4]
         timepoints = thedims[4]
         return tr, timepoints
-
 
     def checkspacematch(dims1, dims2):
         for i in range(1, 4):
@@ -167,14 +162,22 @@ if nibabelexists:
             else:
                 return True
 
-
     def checktimematch(dims1, dims2, numskip1, numskip2):
         if (dims1[4] - numskip1) != (dims2[4] - numskip2):
             print("File numbers of timepoints do not match")
-            print("dimension ", 4, ":", dims1[4],
-                  "(skip ", numskip1, ") !=",
-                  dims2[4],
-                  " (skip ", numskip2, ")")
+            print(
+                "dimension ",
+                4,
+                ":",
+                dims1[4],
+                "(skip ",
+                numskip1,
+                ") !=",
+                dims2[4],
+                " (skip ",
+                numskip2,
+                ")",
+            )
             return False
         else:
             return True
@@ -185,7 +188,7 @@ def timefmt(thenumber):
     return "{:10.2f}".format(thenumber)
 
 
-def proctiminginfo(thetimings, outputfile='', extraheader=None):
+def proctiminginfo(thetimings, outputfile="", extraheader=None):
     theinfolist = []
     start = thetimings[0]
     starttime = float(start[1])
@@ -193,20 +196,27 @@ def proctiminginfo(thetimings, outputfile='', extraheader=None):
     if extraheader is not None:
         print(extraheader)
         theinfolist.append(extraheader)
-    headerstring = 'Clock time\tProgram time\tDuration\tDescription'
+    headerstring = "Clock time\tProgram time\tDuration\tDescription"
     print(headerstring)
     theinfolist.append(headerstring)
     for theevent in thetimings:
         theduration = float(theevent[1] - lasteventtime)
-        outstring = time.strftime("%Y%m%dT%H%M%S", time.localtime(theevent[1])) + \
-                    timefmt(float(theevent[1]) - starttime) + \
-                    '\t' + timefmt(theduration) + '\t' + theevent[0]
+        outstring = (
+            time.strftime("%Y%m%dT%H%M%S", time.localtime(theevent[1]))
+            + timefmt(float(theevent[1]) - starttime)
+            + "\t"
+            + timefmt(theduration)
+            + "\t"
+            + theevent[0]
+        )
         if theevent[2] is not None:
-            outstring += " ({0:.2f} {1}/second)".format(float(theevent[2]) / theduration, theevent[3])
+            outstring += " ({0:.2f} {1}/second)".format(
+                float(theevent[2]) / theduration, theevent[3]
+            )
         print(outstring)
         theinfolist.append(outstring)
         lasteventtime = float(theevent[1])
-    if outputfile != '':
+    if outputfile != "":
         writevec(theinfolist, outputfile)
 
 
@@ -224,11 +234,15 @@ def gethistprops(indata, histlen, refine=False, therange=None):
     peaklag = thestore[0, peakindex + 1]
     peakheight = thestore[1, peakindex + 1]
     numbins = 1
-    while (peakindex + numbins < histlen - 1) and (thestore[1, peakindex + numbins] > peakheight / 2.0):
+    while (peakindex + numbins < histlen - 1) and (
+        thestore[1, peakindex + numbins] > peakheight / 2.0
+    ):
         numbins += 1
     peakwidth = (thestore[0, peakindex + numbins] - thestore[0, peakindex]) * 2.0
     if refine:
-        peakheight, peaklag, peakwidth = gaussfit(peakheight, peaklag, peakwidth, thestore[0, :], thestore[1, :])
+        peakheight, peaklag, peakwidth = gaussfit(
+            peakheight, peaklag, peakwidth, thestore[0, :], thestore[1, :]
+        )
     return peaklag, peakheight, peakwidth
 
 
@@ -240,9 +254,16 @@ def makehistogram(indata, histlen, therange=None):
     return thehist
 
 
-def makeandsavehistogram(indata, histlen, endtrim, outname,
-                         displaytitle='histogram', displayplots=False,
-                         refine=False, therange=None):
+def makeandsavehistogram(
+    indata,
+    histlen,
+    endtrim,
+    outname,
+    displaytitle="histogram",
+    displayplots=False,
+    refine=False,
+    therange=None,
+):
     thestore = np.zeros((2, histlen))
     thehist = makehistogram(indata, histlen, therange)
     thestore[0, :] = thehist[1][-histlen:]
@@ -253,25 +274,29 @@ def makeandsavehistogram(indata, histlen, endtrim, outname,
     # peakheight = max(thestore[1,:])
     peakheight = thestore[1, peakindex + 1]
     numbins = 1
-    while (peakindex + numbins < histlen - 1) and (thestore[1, peakindex + numbins] > peakheight / 2.0):
+    while (peakindex + numbins < histlen - 1) and (
+        thestore[1, peakindex + numbins] > peakheight / 2.0
+    ):
         numbins += 1
     peakwidth = (thestore[0, peakindex + numbins] - thestore[0, peakindex]) * 2.0
     if refine:
-        peakheight, peaklag, peakwidth = gaussfit(peakheight, peaklag, peakwidth, thestore[0, :], thestore[1, :])
-    writenpvecs(np.array([peaklag]), outname + '_peak.txt')
-    writenpvecs(thestore, outname + '.txt')
+        peakheight, peaklag, peakwidth = gaussfit(
+            peakheight, peaklag, peakwidth, thestore[0, :], thestore[1, :]
+        )
+    writenpvecs(np.array([peaklag]), outname + "_peak.txt")
+    writenpvecs(thestore, outname + ".txt")
     if displayplots:
         fig = pl.figure()
         ax = fig.add_subplot(111)
         ax.set_title(displaytitle)
-        pl.plot(thestore[0, :(-1 - endtrim)], thestore[1, :(-1 - endtrim)])
+        pl.plot(thestore[0, : (-1 - endtrim)], thestore[1, : (-1 - endtrim)])
 
 
 # --------------------------- probability functions -------------------------------------------------
 def printthresholds(pcts, thepercentiles, labeltext):
     print(labeltext)
     for i in range(0, len(pcts)):
-        print('\tp <', 1.0 - thepercentiles[i], ': ', pcts[i])
+        print("\tp <", 1.0 - thepercentiles[i], ": ", pcts[i])
 
 
 def fitpdf(thehist, histlen, endtrim, thedata, displayplots=False):
@@ -283,23 +308,32 @@ def fitpdf(thehist, histlen, endtrim, thedata, displayplots=False):
     thestd = thedata.std()
     theskew = sp.stats.stats.skew(thedata)
     # print('initial histogram stats:', theamp, themean, thestd, theskew)
-    thefit = gaussfitsk(theamp, themean, thestd, theskew, thestore[0, :], thestore[1, :])
+    thefit = gaussfitsk(
+        theamp, themean, thestd, theskew, thestore[0, :], thestore[1, :]
+    )
     # print('final histogram stats:', thefit[0], thefit[1], thefit[2], thefit[3])
     if displayplots:
-        displaytitle = 'histogram fit to skewed normal distribution'
+        displaytitle = "histogram fit to skewed normal distribution"
         fig = pl.figure()
         ax = fig.add_subplot(111)
         ax.set_title(displaytitle)
-        pl.plot(thestore[0, :(-1 - endtrim)], thestore[1, :(-1 - endtrim)])
-        pl.plot(thestore[0, :(-1 - endtrim)], gausssk_eval(thestore[0, :(-1 - endtrim)], thefit))
+        pl.plot(thestore[0, : (-1 - endtrim)], thestore[1, : (-1 - endtrim)])
+        pl.plot(
+            thestore[0, : (-1 - endtrim)],
+            gausssk_eval(thestore[0, : (-1 - endtrim)], thefit),
+        )
         pl.show()
     return thefit
 
 
-def sigFromDistributionData(vallist, histlen, thepercentiles, displayplots=False, twotail=False, nozero=False):
+def sigFromDistributionData(
+    vallist, histlen, thepercentiles, displayplots=False, twotail=False, nozero=False
+):
     thehistogram = makehistogram(vallist, histlen)
     histfit = fitpdf(thehistogram, histlen, 0, vallist, displayplots=displayplots)
-    pcts_data = getfracvals(vallist, thepercentiles, numbins=int(np.sqrt(len(vallist)) * 5.0), nozero=nozero)
+    pcts_data = getfracvals(
+        vallist, thepercentiles, numbins=int(np.sqrt(len(vallist)) * 5.0), nozero=nozero
+    )
     pcts_fit = getfracvalsfromfit(histfit, thepercentiles, numbins=100000)
     return pcts_data, pcts_fit
 
@@ -372,7 +406,10 @@ def mlregress(x, y, intercept=True):
         x = x.transpose()
         p, nx = x.shape
         if nx != n:
-            raise AttributeError('x and y must have have the same number of samples (%d and %d)' % (nx, n))
+            raise AttributeError(
+                "x and y must have have the same number of samples (%d and %d)"
+                % (nx, n)
+            )
 
     if intercept is True:
         xc = np.vstack((np.ones(n), x))
@@ -401,7 +438,7 @@ def checkifparfile(filename):
 
 
 def readvecs(inputfilename):
-    thefile = open(inputfilename, 'rU')
+    thefile = open(inputfilename, "rU")
     lines = thefile.readlines()
     numvecs = len(lines[0].split())
     inputvec = np.zeros((numvecs, MAXLINES))
@@ -417,7 +454,7 @@ def readvecs(inputfilename):
 def readvec(inputfilename):
     inputvec = np.zeros(MAXLINES)
     numvals = 0
-    with open(inputfilename, 'rU') as thefile:
+    with open(inputfilename, "rU") as thefile:
         lines = thefile.readlines()
         for line in lines:
             numvals += 1
@@ -425,62 +462,62 @@ def readvec(inputfilename):
     return 1.0 * inputvec[0:numvals]
 
 
-def writedict(thedict, outputfile, lineend=''):
-    if lineend == 'mac':
-        thelineending = '\r'
-        openmode = 'wb'
-    elif lineend == 'win':
-        thelineending = '\r\n'
-        openmode = 'wb'
-    elif lineend == 'linux':
-        thelineending = '\n'
-        openmode = 'wb'
+def writedict(thedict, outputfile, lineend=""):
+    if lineend == "mac":
+        thelineending = "\r"
+        openmode = "wb"
+    elif lineend == "win":
+        thelineending = "\r\n"
+        openmode = "wb"
+    elif lineend == "linux":
+        thelineending = "\n"
+        openmode = "wb"
     else:
-        thelineending = '\n'
-        openmode = 'w'
+        thelineending = "\n"
+        openmode = "w"
     with open(outputfile, openmode) as FILE:
         for key, value in sorted(thedict.items()):
-            FILE.writelines(str(key) + ':\t' + str(value) + thelineending)
+            FILE.writelines(str(key) + ":\t" + str(value) + thelineending)
 
 
-def writevec(thevec, outputfile, lineend=''):
-    if lineend == 'mac':
-        thelineending = '\r'
-        openmode = 'wb'
-    elif lineend == 'win':
-        thelineending = '\r\n'
-        openmode = 'wb'
-    elif lineend == 'linux':
-        thelineending = '\n'
-        openmode = 'wb'
+def writevec(thevec, outputfile, lineend=""):
+    if lineend == "mac":
+        thelineending = "\r"
+        openmode = "wb"
+    elif lineend == "win":
+        thelineending = "\r\n"
+        openmode = "wb"
+    elif lineend == "linux":
+        thelineending = "\n"
+        openmode = "wb"
     else:
-        thelineending = '\n'
-        openmode = 'w'
+        thelineending = "\n"
+        openmode = "w"
     with open(outputfile, openmode) as FILE:
         for i in thevec:
             FILE.writelines(str(i) + thelineending)
 
 
 # rewritten to guarantee file closure, combines writenpvec and writenpvecs
-def writenpvecs(thevecs, outputfile, lineend=''):
+def writenpvecs(thevecs, outputfile, lineend=""):
     theshape = np.shape(thevecs)
-    if lineend == 'mac':
-        thelineending = '\r'
-        openmode = 'wb'
-    elif lineend == 'win':
-        thelineending = '\r\n'
-        openmode = 'wb'
-    elif lineend == 'linux':
-        thelineending = '\n'
-        openmode = 'wb'
+    if lineend == "mac":
+        thelineending = "\r"
+        openmode = "wb"
+    elif lineend == "win":
+        thelineending = "\r\n"
+        openmode = "wb"
+    elif lineend == "linux":
+        thelineending = "\n"
+        openmode = "wb"
     else:
-        thelineending = '\n'
-        openmode = 'w'
+        thelineending = "\n"
+        openmode = "w"
     with open(outputfile, openmode) as FILE:
         if len(theshape) == 2:
             for i in range(0, theshape[1]):
                 for j in range(0, theshape[0]):
-                    FILE.writelines(str(thevecs[j, i]) + '\t')
+                    FILE.writelines(str(thevecs[j, i]) + "\t")
                 FILE.writelines(thelineending)
         else:
             for i in range(0, theshape[0]):
@@ -489,32 +526,46 @@ def writenpvecs(thevecs, outputfile, lineend=''):
 
 # --------------------------- correlation functions -------------------------------------------------
 def quickcorr(data1, data2):
-    thepcorr = sp.stats.stats.pearsonr(corrnormalize(data1, True, True), corrnormalize(data2, True, True))
+    thepcorr = sp.stats.stats.pearsonr(
+        corrnormalize(data1, True, True), corrnormalize(data2, True, True)
+    )
     return thepcorr
 
 
-def shorttermcorr_1D(data1, data2, sampletime, windowtime, prewindow=False, dodetrend=False):
+def shorttermcorr_1D(
+    data1, data2, sampletime, windowtime, prewindow=False, dodetrend=False
+):
     windowsize = windowtime // sampletime
     halfwindow = int((windowsize + 1) // 2)
     corrpertime = data1 * 0.0
     ppertime = data1 * 0.0
     for i in range(halfwindow, len(data1) - halfwindow):
-        dataseg1 = corrnormalize(data1[i - halfwindow:i + halfwindow], prewindow, dodetrend)
-        dataseg2 = corrnormalize(data2[i - halfwindow:i + halfwindow], prewindow, dodetrend)
+        dataseg1 = corrnormalize(
+            data1[i - halfwindow : i + halfwindow], prewindow, dodetrend
+        )
+        dataseg2 = corrnormalize(
+            data2[i - halfwindow : i + halfwindow], prewindow, dodetrend
+        )
         thepcorr = sp.stats.stats.pearsonr(dataseg1, dataseg2)
         corrpertime[i] = thepcorr[0]
         ppertime[i] = thepcorr[1]
     return corrpertime, ppertime
 
 
-def shorttermcorr_2D(data1, data2, sampletime, windowtime, prewindow=False, dodetrend=False):
+def shorttermcorr_2D(
+    data1, data2, sampletime, windowtime, prewindow=False, dodetrend=False
+):
     windowsize = windowtime // sampletime
     halfwindow = int((windowsize + 1) // 2)
     xcorrpertime = np.zeros((2 * halfwindow, len(data1)))
     for i in range(halfwindow, len(data1) - halfwindow):
-        dataseg1 = corrnormalize(data1[i - halfwindow:i + halfwindow], prewindow, dodetrend)
-        dataseg2 = corrnormalize(data2[i - halfwindow:i + halfwindow], prewindow, dodetrend)
-        xcorrpertime[:, i] = np.correlate(dataseg1, dataseg2, mode='full')
+        dataseg1 = corrnormalize(
+            data1[i - halfwindow : i + halfwindow], prewindow, dodetrend
+        )
+        dataseg2 = corrnormalize(
+            data2[i - halfwindow : i + halfwindow], prewindow, dodetrend
+        )
+        xcorrpertime[:, i] = np.correlate(dataseg1, dataseg2, mode="full")
     return xcorrpertime
 
 
@@ -547,37 +598,37 @@ def eckartraw(input1, input2, doplot=False):
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('fft1')
+        ax.set_title("fft1")
         pl.plot(xvec, abs(fft1))
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('fft2')
+        ax.set_title("fft2")
         pl.plot(xvec, abs(fft2))
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('G12')
+        ax.set_title("G12")
         pl.plot(xvec, abs(G12))
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('G11')
+        ax.set_title("G11")
         pl.plot(xvec, abs(G11))
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('G22')
+        ax.set_title("G22")
         pl.plot(xvec, abs(G22))
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('denom')
+        ax.set_title("denom")
         pl.plot(xvec, abs(denom))
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('G')
+        ax.set_title("G")
         pl.plot(xvec, abs(G))
     return g
 
@@ -586,9 +637,9 @@ def eckartraw(input1, input2, doplot=False):
 def fastcorrelate(input1, input2, usefft=True):
     if usefft:
         # Do an array flipped convolution, which is a correlation.
-        return sp.signal.fftconvolve(input1, input2[::-1], mode='full')
+        return sp.signal.fftconvolve(input1, input2[::-1], mode="full")
     else:
-        return np.correlate(input1, input2, mode='full')
+        return np.correlate(input1, input2, mode="full")
 
 
 def gccphat(input1, input2, doplot=False):
@@ -613,32 +664,32 @@ def gccphatraw(input1, input2, doplot):
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('fft1')
+        ax.set_title("fft1")
         pl.plot(xvec, abs(fft1))
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('fft2')
+        ax.set_title("fft2")
         pl.plot(xvec, abs(fft2))
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('G12')
+        ax.set_title("G12")
         pl.plot(xvec, abs(G12))
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('denom')
+        ax.set_title("denom")
         pl.plot(xvec, abs(denom))
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('angle(G)')
+        ax.set_title("angle(G)")
         pl.plot(xvec, np.angle(G))
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('abs(G)')
+        ax.set_title("abs(G)")
         pl.plot(xvec, abs(G))
     return g
 
@@ -648,14 +699,15 @@ def lfilter_zi(b, a):
     # compute the zi state from the filter parameters. see [Gust96].
 
     # Based on:
-    # [Gust96] Fredrik Gustafsson, Determining the initial states in forward-backward 
-    # filtering, IEEE Transactions on Signal Processing, pp. 988--992, April 1996, 
+    # [Gust96] Fredrik Gustafsson, Determining the initial states in forward-backward
+    # filtering, IEEE Transactions on Signal Processing, pp. 988--992, April 1996,
     # Volume 44, Issue 4
 
     n = max(len(a), len(b))
 
-    zin = (np.eye(n - 1) - np.hstack((-a[1:n, np.newaxis],
-                                      np.vstack((np.eye(n - 2), np.zeros(n - 2))))))
+    zin = np.eye(n - 1) - np.hstack(
+        (-a[1:n, np.newaxis], np.vstack((np.eye(n - 2), np.zeros(n - 2))))
+    )
 
     zid = b[1:n] - a[1:n] * b[0]
 
@@ -705,7 +757,7 @@ def fastfiltfilt(b, a, zi, edge, x):
 
     (y, zf) = sp.signal.lfilter(b, a, np.flipud(y), -1, zi * y[-1])
 
-    return np.flipud(y[edge - 1:-edge + 1])
+    return np.flipud(y[edge - 1 : -edge + 1])
 
 
 def gaussresidualssk(p, y, x):
@@ -743,7 +795,7 @@ def gausssk_eval(x, p):
 
 @conditionaljit()
 def gauss_eval(x, p):
-    return p[0] * np.exp(-(x - p[1]) ** 2 / (2 * p[2] ** 2))
+    return p[0] * np.exp(-((x - p[1]) ** 2) / (2 * p[2] ** 2))
 
 
 @conditionaljit()
@@ -776,7 +828,7 @@ def getfracvals(datamat, thefracs, numbins=200, displayplots=False, nozero=False
     if displayplots:
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('cumulative mean sum of histogram')
+        ax.set_title("cumulative mean sum of histogram")
         plot(bins[-numbins:], cummeanhist[-numbins:])
         pl.show()
     for thisfrac in thefracs:
@@ -799,7 +851,7 @@ def getfracvalsfromfit(histfit, thefracs, numbins=2000, displayplots=False):
     if displayplots:
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('cumulative mean sum of histogram')
+        ax.set_title("cumulative mean sum of histogram")
         pl.plot(bins[-numbins:], cummeanhist[-numbins:])
         pl.show()
     for thisfrac in thefracs:
@@ -816,7 +868,14 @@ def makemask(image, threshpct=25.0, verbose=False):
     fracval = getfracval(image, 0.98)
     threshval = (threshpct / 100.0) * fracval
     if verbose:
-        print('fracval:', fracval, ' threshpct:', threshpct, ' mask threshhold:', threshval)
+        print(
+            "fracval:",
+            fracval,
+            " threshpct:",
+            threshpct,
+            " mask threshhold:",
+            threshval,
+        )
     themask = np.where(image > threshval, 1.0, 0.0)
     return themask
 
@@ -824,13 +883,25 @@ def makemask(image, threshpct=25.0, verbose=False):
 def makelaglist(lagstart, lagend, lagstep):
     numsteps = np.floor((lagend - lagstart) / lagstep) + 1
     lagend = lagstart + lagstep * (numsteps - 1)
-    print("creating list of ", numsteps, " lag steps (", lagstart, " to ", lagend, " in steps of ", lagstep, ")")
-    thelags = np.r_[0.0:1.0 * numsteps] * lagstep + lagstart
+    print(
+        "creating list of ",
+        numsteps,
+        " lag steps (",
+        lagstart,
+        " to ",
+        lagend,
+        " in steps of ",
+        lagstep,
+        ")",
+    )
+    thelags = np.r_[0.0 : 1.0 * numsteps] * lagstep + lagstart
     return thelags
 
 
 # --------------------------- Fitting functions -------------------------------------------------
-def locpeak(data, samplerate, lastpeaktime, winsizeinsecs=5.0, thresh=0.75, hysteresissecs=0.4):
+def locpeak(
+    data, samplerate, lastpeaktime, winsizeinsecs=5.0, thresh=0.75, hysteresissecs=0.4
+):
     # look at a limited time window
     winsizeinsecs = 5.0
     numpoints = int(winsizeinsecs * samplerate)
@@ -855,11 +926,16 @@ def locpeak(data, samplerate, lastpeaktime, winsizeinsecs=5.0, thresh=0.75, hyst
         if data[-2] <= data[-3]:
             fitstart = -5
             fitdata = data[fitstart:]
-            X = currenttime + (np.arange(0.0, len(fitdata)) - len(fitdata) + 1.0) / samplerate
+            X = (
+                currenttime
+                + (np.arange(0.0, len(fitdata)) - len(fitdata) + 1.0) / samplerate
+            )
             maxtime = sum(X * fitdata) / sum(fitdata)
             maxsigma = np.sqrt(abs(sum((X - maxtime) ** 2 * fitdata) / sum(fitdata)))
             maxval = fitdata.max()
-            peakheight, peakloc, peakwidth = gaussfit(maxval, maxtime, maxsigma, X, fitdata)
+            peakheight, peakloc, peakwidth = gaussfit(
+                maxval, maxtime, maxsigma, X, fitdata
+            )
             # print(currenttime,fitdata,X,peakloc)
             return peakloc
         else:
@@ -916,16 +992,31 @@ def findrisetimefunc(thexvals, theyvals, debug=False, refine=False, displayplots
     initrisestart = (thexvals[ind25] + thexvals[ind75]) / 2.0
     print("guess:", initrisestart, initriseamplitude, initrisetime)
     p0 = np.array([initrisestart, initriseamplitude, initrisetime])
-    plsq, dummy = sp.optimize.leastsq(risetimeresiduals, p0,
-                                      args=(theyvals, thexvals), maxfev=5000)
+    plsq, dummy = sp.optimize.leastsq(
+        risetimeresiduals, p0, args=(theyvals, thexvals), maxfev=5000
+    )
     return plsq[0], plsq[1], plsq[2]
 
 
 @conditionaljit()
-def findmaxlag(thexcorr_x, thexcorr_y, lagmin, lagmax, widthlimit, edgebufferfrac=0.0, threshval=0.0, uthreshval=30.0,
-               debug=False, refine=False, maxguess=0.0, useguess=False, fastgauss=False, enforcethresh=True,
-               displayplots=False):
-    # set initial parameters 
+def findmaxlag(
+    thexcorr_x,
+    thexcorr_y,
+    lagmin,
+    lagmax,
+    widthlimit,
+    edgebufferfrac=0.0,
+    threshval=0.0,
+    uthreshval=30.0,
+    debug=False,
+    refine=False,
+    maxguess=0.0,
+    useguess=False,
+    fastgauss=False,
+    enforcethresh=True,
+    displayplots=False,
+):
+    # set initial parameters
     # widthlimit is in seconds
     # maxsigma is in Hz
     # maxlag is in seconds
@@ -944,7 +1035,7 @@ def findmaxlag(thexcorr_x, thexcorr_y, lagmin, lagmax, widthlimit, edgebufferfra
     FML_BADLAG = 0x02
     FML_BADWIDTH = 0x04
     FML_HITEDGE = 0x08
-    FML_FITFAIL = 0x0f
+    FML_FITFAIL = 0x0F
 
     # make an initial guess at the fit parameters for the gaussian
     # start with finding the maximum value
@@ -973,16 +1064,38 @@ def findmaxlag(thexcorr_x, thexcorr_y, lagmin, lagmax, widthlimit, edgebufferfra
     i = 0
     j = 0
     searchfrac = 0.5
-    while (maxindex + i <= upperlimit) and (thexcorr_y[maxindex + i] > searchfrac * maxval_init) and (i < searchbins):
+    while (
+        (maxindex + i <= upperlimit)
+        and (thexcorr_y[maxindex + i] > searchfrac * maxval_init)
+        and (i < searchbins)
+    ):
         i += 1
     i -= 1
-    while (maxindex - j >= lowerlimit) and (thexcorr_y[maxindex - j] > searchfrac * maxval_init) and (j < searchbins):
+    while (
+        (maxindex - j >= lowerlimit)
+        and (thexcorr_y[maxindex - j] > searchfrac * maxval_init)
+        and (j < searchbins)
+    ):
         j += 1
     j -= 1
     maxsigma_init = (2.0 * searchfrac) * 2.0 * (i + j + 1) * binwidth / 2.355
     if (debug and (maxval_init != 0.0)) or displayplots:
-        print("maxval_init=", maxval_init, "maxindex=", maxindex, "maxlag_init=", maxlag_init, "maxsigma_init=",
-              maxsigma_init, "maskval=", maskval, lagmin, lagmax, widthlimit, threshval)
+        print(
+            "maxval_init=",
+            maxval_init,
+            "maxindex=",
+            maxindex,
+            "maxlag_init=",
+            maxlag_init,
+            "maxsigma_init=",
+            maxsigma_init,
+            "maskval=",
+            maskval,
+            lagmin,
+            lagmax,
+            widthlimit,
+            threshval,
+        )
         print(maxlag_init, lagmax, "if 1 gt 2 reject")
         print(maxlag_init, lagmin, "if 1 lt 2 reject")
         print(maxsigma_init, widthlimit, "if 1 gt 2 reject")
@@ -1019,8 +1132,9 @@ def findmaxlag(thexcorr_x, thexcorr_y, lagmin, lagmax, widthlimit, edgebufferfra
                 # do a least squares fit over the top of the peak
                 p0 = np.array([maxval_init, maxlag_init, maxsigma_init])
                 if fitend - fitstart >= 3:
-                    plsq, dummy = sp.optimize.leastsq(gaussresiduals, p0,
-                                                      args=(data, X), maxfev=5000)
+                    plsq, dummy = sp.optimize.leastsq(
+                        gaussresiduals, p0, args=(data, X), maxfev=5000
+                    )
                     maxval = 1.0 * plsq[0]
                     maxlag = 1.0 * plsq[1]
                     maxsigma = 1.0 * plsq[2]
@@ -1041,47 +1155,77 @@ def findmaxlag(thexcorr_x, thexcorr_y, lagmin, lagmax, widthlimit, edgebufferfra
             maxlag = 0.0
             maxsigma = 0.0
     if debug or displayplots:
-        print("init to final: maxval", maxval_init, maxval, ", maxlag:", maxlag_init, maxlag, ", width:", maxsigma_init,
-              maxsigma)
+        print(
+            "init to final: maxval",
+            maxval_init,
+            maxval,
+            ", maxlag:",
+            maxlag_init,
+            maxlag,
+            ", width:",
+            maxsigma_init,
+            maxsigma,
+        )
     if displayplots and refine and (maskval != 0.0):
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('Data and fit')
+        ax.set_title("Data and fit")
         hiresx = np.arange(X[0], X[-1], (X[1] - X[0]) / 10.0)
-        pl.plot(X, data, 'ro', hiresx, gauss_eval(hiresx, np.array([maxval, maxlag, maxsigma])), 'b-')
+        pl.plot(
+            X,
+            data,
+            "ro",
+            hiresx,
+            gauss_eval(hiresx, np.array([maxval, maxlag, maxsigma])),
+            "b-",
+        )
         pl.show()
     return maxindex, maxlag, maxval, maxsigma, maskval, failreason
 
 
 def gaussfitsk(height, loc, width, skewness, xvals, yvals):
-    plsq, dummy = sp.optimize.leastsq(gaussresidualssk, np.array([height, loc, width, skewness]),
-                                      args=(yvals, xvals), maxfev=5000)
+    plsq, dummy = sp.optimize.leastsq(
+        gaussresidualssk,
+        np.array([height, loc, width, skewness]),
+        args=(yvals, xvals),
+        maxfev=5000,
+    )
     return plsq
 
 
 def gaussfit(height, loc, width, xvals, yvals):
-    plsq, dummy = sp.optimize.leastsq(gaussresiduals, np.array([height, loc, width]), args=(yvals, xvals), maxfev=5000)
+    plsq, dummy = sp.optimize.leastsq(
+        gaussresiduals, np.array([height, loc, width]), args=(yvals, xvals), maxfev=5000
+    )
     return plsq[0], plsq[1], plsq[2]
 
 
 # --------------------------- Resampling and time shifting functions -------------------------------------------
 class fastresampler:
-    def __init__(self, timeaxis, timecourse, padvalue=30.0, upsampleratio=100, doplot=False):
+    def __init__(
+        self, timeaxis, timecourse, padvalue=30.0, upsampleratio=100, doplot=False
+    ):
         # print('initializing fastresampler with padvalue =',padvalue)
         self.upsampleratio = upsampleratio
         self.initstep = timeaxis[1] - timeaxis[0]
         self.hiresstep = self.initstep / self.upsampleratio
-        self.hires_x = np.r_[timeaxis[0] - padvalue:self.initstep * len(timeaxis) + padvalue:self.hiresstep]
+        self.hires_x = np.r_[
+            timeaxis[0]
+            - padvalue : self.initstep * len(timeaxis)
+            + padvalue : self.hiresstep
+        ]
         self.hiresstart = self.hires_x[0]
-        self.hires_y = doresample(timeaxis, timecourse, self.hires_x, method='univariate')
-        self.hires_y[:padvalue // self.hiresstep] = 0.0
-        self.hires_y[-padvalue // self.hiresstep:] = 0.0
+        self.hires_y = doresample(
+            timeaxis, timecourse, self.hires_x, method="univariate"
+        )
+        self.hires_y[: padvalue // self.hiresstep] = 0.0
+        self.hires_y[-padvalue // self.hiresstep :] = 0.0
         if doplot:
             fig = pl.figure()
             ax = fig.add_subplot(111)
-            ax.set_title('fastresampler initial timecourses')
+            ax.set_title("fastresampler initial timecourses")
             pl.plot(timeaxis, timecourse, self.hires_x, self.hires_y)
-            pl.legend(('input', 'hires'))
+            pl.legend(("input", "hires"))
             pl.show()
 
     def yfromx(self, newtimeaxis, doplot=False):
@@ -1089,32 +1233,39 @@ class fastresampler:
         try:
             out_y = self.hires_y[outindices]
         except IndexError:
-            print('')
-            print('indexing out of bounds in fastresampler')
-            print('    hirestart,hiresstep,hiresend:', self.hiresstart, self.hiresstep, self.hires_x[-1])
-            print('    requested axis limits:', newtimeaxis[0], newtimeaxis[-1])
+            print("")
+            print("indexing out of bounds in fastresampler")
+            print(
+                "    hirestart,hiresstep,hiresend:",
+                self.hiresstart,
+                self.hiresstep,
+                self.hires_x[-1],
+            )
+            print("    requested axis limits:", newtimeaxis[0], newtimeaxis[-1])
             sys.exit()
         if doplot:
             fig = pl.figure()
             ax = fig.add_subplot(111)
-            ax.set_title('fastresampler timecourses')
+            ax.set_title("fastresampler timecourses")
             pl.plot(self.hires_x, self.hires_y, newtimeaxis, out_y)
-            pl.legend(('hires', 'output'))
+            pl.legend(("hires", "output"))
             pl.show()
         return 1.0 * out_y
 
 
-def prepforfastresample(orig_x, orig_y, numtrs, fmritr, padvalue, upsampleratio, doplot=False):
+def prepforfastresample(
+    orig_x, orig_y, numtrs, fmritr, padvalue, upsampleratio, doplot=False
+):
     hiresstep = fmritr / upsampleratio
-    hires_x_padded = np.r_[-padvalue:fmritr * numtrs + padvalue:hiresstep]
+    hires_x_padded = np.r_[-padvalue : fmritr * numtrs + padvalue : hiresstep]
     hiresstart = hires_x_padded[0]
-    hires_y = doresample(orig_x, orig_y, hires_x_padded, method='univariate')
-    hires_y[:padvalue // hiresstep] = 0.0
-    hires_y[-padvalue // hiresstep:] = 0.0
+    hires_y = doresample(orig_x, orig_y, hires_x_padded, method="univariate")
+    hires_y[: padvalue // hiresstep] = 0.0
+    hires_y[-padvalue // hiresstep :] = 0.0
     if doplot:
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('Initial resampled vector')
+        ax.set_title("Initial resampled vector")
         pl.plot(hires_x_padded, hires_y)
         pl.show()
     return hires_x_padded, hires_y, hiresstep, hiresstart
@@ -1128,24 +1279,30 @@ def dofastresample(orig_x, orig_y, new_x, hrstep, hrstart, upsampleratio):
     return 1.0 * orig_y[starthrindex:endhrindex:stride]
 
 
-def doresample(orig_x, orig_y, new_x, method='cubic'):
-    if method == 'cubic':
+def doresample(orig_x, orig_y, new_x, method="cubic"):
+    if method == "cubic":
         cj = sp.signal.cspline1d(orig_y)
-        return sp.signal.cspline1d_eval(cj, new_x, dx=(orig_x[1] - orig_x[0]), x0=orig_x[0])
-    elif method == 'quadratic':
+        return sp.signal.cspline1d_eval(
+            cj, new_x, dx=(orig_x[1] - orig_x[0]), x0=orig_x[0]
+        )
+    elif method == "quadratic":
         qj = sp.signal.qspline1d(orig_y)
-        return sp.signal.qspline1d_eval(qj, new_x, dx=(orig_x[1] - orig_x[0]), x0=orig_x[0])
-    elif method == 'univariate':
-        interpolator = sp.interpolate.UnivariateSpline(orig_x, orig_y, k=3, s=0)  # s=0 interpolates
+        return sp.signal.qspline1d_eval(
+            qj, new_x, dx=(orig_x[1] - orig_x[0]), x0=orig_x[0]
+        )
+    elif method == "univariate":
+        interpolator = sp.interpolate.UnivariateSpline(
+            orig_x, orig_y, k=3, s=0
+        )  # s=0 interpolates
         return interpolator(new_x)
     else:
-        print('invalid interpolation method')
+        print("invalid interpolation method")
         return None
 
 
-def dotwostepresample(orig_x, orig_y, intermed_freq, final_freq, method='univariate'):
+def dotwostepresample(orig_x, orig_y, intermed_freq, final_freq, method="univariate"):
     if intermed_freq <= final_freq:
-        print('intermediate frequency must be higher than final frequency')
+        print("intermediate frequency must be higher than final frequency")
         sys.exit()
 
     # upsample
@@ -1156,7 +1313,7 @@ def dotwostepresample(orig_x, orig_y, intermed_freq, final_freq, method='univari
     intermed_y = doresample(orig_x, orig_y, intermed_x, method=method)
 
     # antialias
-    aafilter = noncausalfilter(filtertype='arb', usebutterworth=True)
+    aafilter = noncausalfilter(filtertype="arb", usebutterworth=True)
     aafilter.setarb(0.0, 0.0, 0.95 * final_freq, final_freq)
     antialias_y = aafilter.apply(intermed_freq, intermed_y)
     # antialias_y = dolptrapfftfilt(intermed_freq,0.9*final_freq,final_freq,intermed_y)
@@ -1229,7 +1386,9 @@ def calcsliceoffset(sotype, slicenum, numslices, tr, multiband=1):
                 slicetime = (tr / numslices) * (slicenum / 2)
             else:
                 # odd slice number
-                slicetime = (tr / numslices) * ((numslices + 1) / 2 + (slicenum - 1) / 2)
+                slicetime = (tr / numslices) * (
+                    (numslices + 1) / 2 + (slicenum - 1) / 2
+                )
 
     # Siemens multiband interleave format
     if sotype == 7:
@@ -1250,7 +1409,9 @@ def calcsliceoffset(sotype, slicenum, numslices, tr, multiband=1):
                 slicetime = (tr / numberofshots) * (modslicenum / 2)
             else:
                 # odd slice number
-                slicetime = (tr / numberofshots) * ((numberofshots + 1) / 2 + (modslicenum - 1) / 2)
+                slicetime = (tr / numberofshots) * (
+                    (numberofshots + 1) / 2 + (modslicenum - 1) / 2
+                )
     return slicetime
 
 
@@ -1260,18 +1421,20 @@ def timeshift(inputtc, shifttrs, padtrs, doplot=False):
     # set up useful parameters
     thelen = len(inputtc)
     thepaddedlen = thelen + 2 * padtrs
-    imag = 1.j
+    imag = 1.0j
 
     # initialize variables
     preshifted_y = np.zeros(thepaddedlen)  # initialize the working buffer (with pad)
     weights = np.zeros(thepaddedlen)  # initialize the weight buffer (with pad)
 
     # now do the math
-    preshifted_y[padtrs:padtrs + thelen] = inputtc[:]  # copy initial data into shift buffer
-    weights[padtrs:padtrs + thelen] = 1.0  # put in the weight vector
+    preshifted_y[padtrs : padtrs + thelen] = inputtc[
+        :
+    ]  # copy initial data into shift buffer
+    weights[padtrs : padtrs + thelen] = 1.0  # put in the weight vector
     revtc = inputtc[::-1]  # reflect data around ends to
     preshifted_y[0:padtrs] = revtc[-padtrs:]  # eliminate discontinuities
-    preshifted_y[padtrs + thelen:] = revtc[0:padtrs]
+    preshifted_y[padtrs + thelen :] = revtc[0:padtrs]
 
     # finish initializations
     osfac = 8
@@ -1279,15 +1442,15 @@ def timeshift(inputtc, shifttrs, padtrs, doplot=False):
     osfftlen = osfac * fftlen
 
     # create the phase modulation timecourse
-    initargvec = (np.arange(0.0, 2.0 * np.pi, 2.0 * np.pi / float(osfftlen)) - np.pi)
+    initargvec = np.arange(0.0, 2.0 * np.pi, 2.0 * np.pi / float(osfftlen)) - np.pi
     argvec = np.roll(initargvec * osfac * shifttrs, -int(osfftlen / 2))
     modvec = np.cos(argvec) - imag * np.sin(argvec)
 
     # process the data (fft->oversample->modulate->ifft->filter->downsample)
     fftdata = sp.fftpack.fft(preshifted_y)  # do the actual shifting
     osfftdata = (1.0 + imag) * np.zeros(fftlen * osfac)
-    osfftdata[0:fftlen / 2] = fftdata[0:fftlen / 2]
-    osfftdata[-fftlen / 2:] = fftdata[-fftlen / 2:]
+    osfftdata[0 : fftlen / 2] = fftdata[0 : fftlen / 2]
+    osfftdata[-fftlen / 2 :] = fftdata[-fftlen / 2 :]
     shifted_y = sp.fftpack.ifft(modvec * osfftdata).real
     butterorder = 4
     filt_shifted_y = dolpfiltfilt(2.0 * osfac, 1.0, shifted_y, butterorder)
@@ -1296,8 +1459,8 @@ def timeshift(inputtc, shifttrs, padtrs, doplot=False):
     # process the weights
     w_fftdata = sp.fftpack.fft(weights)  # do the actual shifting
     w_osfftdata = (1.0 + imag) * np.zeros(fftlen * osfac)
-    w_osfftdata[0:fftlen / 2] = w_fftdata[0:fftlen / 2]
-    w_osfftdata[-fftlen / 2:] = w_fftdata[-fftlen / 2:]
+    w_osfftdata[0 : fftlen / 2] = w_fftdata[0 : fftlen / 2]
+    w_osfftdata[-fftlen / 2 :] = w_fftdata[-fftlen / 2 :]
     shifted_weights = sp.fftpack.ifft(modvec * w_osfftdata).real
     filt_shifted_weights = dolpfiltfilt(2.0 * osfac, 1.0, shifted_weights, butterorder)
     ds_shifted_weights = filt_shifted_weights[::osfac] * osfac
@@ -1311,18 +1474,22 @@ def timeshift(inputtc, shifttrs, padtrs, doplot=False):
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('Initial vector')
+        ax.set_title("Initial vector")
         pl.plot(xvec, preshifted_y)
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('Initial and shifted vector')
+        ax.set_title("Initial and shifted vector")
         pl.plot(xvec, preshifted_y, xvec, ds_shifted_y)
 
         pl.show()
 
-    return ([ds_shifted_y[padtrs:padtrs + thelen], ds_shifted_weights[padtrs:padtrs + thelen], ds_shifted_y,
-             ds_shifted_weights])
+    return [
+        ds_shifted_y[padtrs : padtrs + thelen],
+        ds_shifted_weights[padtrs : padtrs + thelen],
+        ds_shifted_y,
+        ds_shifted_weights,
+    ]
 
 
 # timeshift using direct resampling
@@ -1333,7 +1500,7 @@ def timeshift2(inputtc, shifttrs, padtrs, doplot=False, dopostfilter=False):
     offset = padtrs
 
     # initialize the postfilter
-    theringfilter = noncausalfilter(filtertype='ringstop')
+    theringfilter = noncausalfilter(filtertype="ringstop")
 
     # initialize variables
     preshifted_y = np.zeros(thepaddedlen)  # initialize the working buffer (with pad)
@@ -1342,13 +1509,19 @@ def timeshift2(inputtc, shifttrs, padtrs, doplot=False, dopostfilter=False):
     # now do the math
     preshifted_x = np.arange(0.0, len(preshifted_y), 1.0)
     shifted_x = preshifted_x - shifttrs
-    preshifted_y[offset:offset + thelen] = inputtc[:]  # copy initial data into shift buffer
+    preshifted_y[offset : offset + thelen] = inputtc[
+        :
+    ]  # copy initial data into shift buffer
     revtc = inputtc[::-1]
     preshifted_y[0:offset] = revtc[-offset:]
-    preshifted_y[offset + thelen:] = revtc[0:offset]
-    weights[offset:offset + thelen] = 1.0  # put in the weight vector
-    shifted_y = doresample(preshifted_x, preshifted_y, shifted_x, method='univariate')  # do the actual shifting
-    shifted_weights = doresample(preshifted_x, weights, shifted_x, method='univariate')  # do the actual shifting
+    preshifted_y[offset + thelen :] = revtc[0:offset]
+    weights[offset : offset + thelen] = 1.0  # put in the weight vector
+    shifted_y = doresample(
+        preshifted_x, preshifted_y, shifted_x, method="univariate"
+    )  # do the actual shifting
+    shifted_weights = doresample(
+        preshifted_x, weights, shifted_x, method="univariate"
+    )  # do the actual shifting
     if dopostfilter:
         shifted_y = theringfilter.apply(1.0, shifted_y)
         shifted_weights = theringfilter.apply(1.0, shifted_weights)
@@ -1361,27 +1534,32 @@ def timeshift2(inputtc, shifttrs, padtrs, doplot=False, dopostfilter=False):
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('Initial vector')
+        ax.set_title("Initial vector")
         pl.plot(preshifted_x, preshifted_y)
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('Shifted vector')
+        ax.set_title("Shifted vector")
         pl.plot(shifted_x, shifted_y)
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('Initial and shifted vector')
+        ax.set_title("Initial and shifted vector")
         pl.plot(preshifted_x, preshifted_y, shifted_x, shifted_y)
 
         fig = pl.figure()
         ax = fig.add_subplot(111)
-        ax.set_title('Initial and shifted weight vector')
+        ax.set_title("Initial and shifted weight vector")
         pl.plot(preshifted_x, weights, shifted_x, shifted_weights)
 
         pl.show()
 
-    return [shifted_y[offset:offset + thelen], shifted_weights[offset:offset + thelen], shifted_y, shifted_weights]
+    return [
+        shifted_y[offset : offset + thelen],
+        shifted_weights[offset : offset + thelen],
+        shifted_y,
+        shifted_weights,
+    ]
 
 
 # --------------------------- Window functions -------------------------------------------------
@@ -1391,7 +1569,9 @@ def blackmanharris(length):
     a1 = 0.48829
     a2 = 0.14128
     a3 = 0.01168
-    return a0 - a1 * np.cos(argvec) + a2 * np.cos(2.0 * argvec) - a3 * np.cos(3.0 * argvec)
+    return (
+        a0 - a1 * np.cos(argvec) + a2 * np.cos(2.0 * argvec) - a3 * np.cos(3.0 * argvec)
+    )
 
 
 def hann(length):
@@ -1405,7 +1585,9 @@ def hamming(length):
 def envdetect(vector, filtwidth=3.0):
     demeaned = vector - np.mean(vector)
     sigabs = abs(demeaned)
-    return dolptrapfftfilt(1.0, 1.0 / (2.0 * filtwidth), 1.1 / (2.0 * filtwidth), sigabs)
+    return dolptrapfftfilt(
+        1.0, 1.0 / (2.0 * filtwidth), 1.1 / (2.0 * filtwidth), sigabs
+    )
 
 
 # --------------------------- Normalization functions -------------------------------------------------
@@ -1458,6 +1640,7 @@ def corrnormalize(thedata, prewindow, dodetrend):
 # --------------------------- Filtering functions -------------------------------------------------
 # NB: No automatic padding for precalculated filters
 
+
 def padvec(indata, padlen=20):
     return np.concatenate((indata[::-1][-padlen:], indata, indata[::-1][0:padlen]))
 
@@ -1467,7 +1650,9 @@ def unpadvec(indata, padlen=20):
 
 
 def ssmooth(xsize, ysize, zsize, sigma, thedata):
-    return sp.ndimage.gaussian_filter(thedata, [sigma / xsize, sigma / ysize, sigma / zsize])
+    return sp.ndimage.gaussian_filter(
+        thedata, [sigma / xsize, sigma / ysize, sigma / zsize]
+    )
 
 
 # - butterworth filters
@@ -1475,14 +1660,18 @@ def dolpfiltfilt(samplefreq, cutofffreq, indata, order, padlen=20):
     if cutofffreq > samplefreq / 2.0:
         cutofffreq = samplefreq / 2.0
     [b, a] = sp.signal.butter(order, 2.0 * cutofffreq / samplefreq)
-    return unpadvec(sp.signal.filtfilt(b, a, padvec(indata, padlen=padlen)).real, padlen=padlen)
+    return unpadvec(
+        sp.signal.filtfilt(b, a, padvec(indata, padlen=padlen)).real, padlen=padlen
+    )
 
 
 def dohpfiltfilt(samplefreq, cutofffreq, indata, order, padlen=20):
     if cutofffreq < 0.0:
         cutofffreq = 0.0
-    [b, a] = sp.signal.butter(order, 2.0 * cutofffreq / samplefreq, 'highpass')
-    return unpadvec(sp.signal.filtfilt(b, a, padvec(indata, padlen=padlen)).real, padlen=padlen)
+    [b, a] = sp.signal.butter(order, 2.0 * cutofffreq / samplefreq, "highpass")
+    return unpadvec(
+        sp.signal.filtfilt(b, a, padvec(indata, padlen=padlen)).real, padlen=padlen
+    )
 
 
 def dobpfiltfilt(samplefreq, cutofffreq_low, cutofffreq_high, indata, order, padlen=20):
@@ -1490,9 +1679,14 @@ def dobpfiltfilt(samplefreq, cutofffreq_low, cutofffreq_high, indata, order, pad
         cutofffreq_high = samplefreq / 2.0
     if cutofffreq_log < 0.0:
         cutofffreq_low = 0.0
-    [b, a] = sp.signal.butter(order, [2.0 * cutofffreq_low / samplefreq, 2.0 * cutofffreq_high / samplefreq],
-                              'bandpass')
-    return unpadvec(sp.signal.filtfilt(b, a, padvec(indata, padlen=padlen)).real, padlen=padlen)
+    [b, a] = sp.signal.butter(
+        order,
+        [2.0 * cutofffreq_low / samplefreq, 2.0 * cutofffreq_high / samplefreq],
+        "bandpass",
+    )
+    return unpadvec(
+        sp.signal.filtfilt(b, a, padvec(indata, padlen=padlen)).real, padlen=padlen
+    )
 
 
 def doprecalcfiltfilt(b, a, indata):
@@ -1505,12 +1699,14 @@ def dolpfastfiltfiltinit(samplefreq, cutofffreq, indata, order):
 
 
 def dohpfastfiltfiltinit(samplefreq, cutofffreq, indata, order):
-    [b, a] = sp.signal.butter(order, cutofffreq / samplefreq, 'highpass')
+    [b, a] = sp.signal.butter(order, cutofffreq / samplefreq, "highpass")
     return fastfiltfiltinit(b, a, indata)
 
 
 def dobpfastfiltfiltinit(samplefreq, cutofffreq_low, cutofffreq_high, indata, order):
-    [b, a] = sp.signal.butter(order, [cutofffreq_low / samplefreq, cutofffreq_high / samplefreq], 'bandpass')
+    [b, a] = sp.signal.butter(
+        order, [cutofffreq_low / samplefreq, cutofffreq_high / samplefreq], "bandpass"
+    )
     return fastfiltfiltinit(b, a, indata)
 
 
@@ -1549,7 +1745,8 @@ def dobpfftfilt(samplefreq, cutofffreq_low, cutofffreq_high, indata, padlen=20):
     padindata = padvec(indata, padlen=padlen)
     indata_trans = sp.fftpack.fft(padindata)
     filterfunc = getlpfftfunc(samplefreq, cutofffreq_high, padindata) * (
-        1.0 - getlpfftfunc(samplefreq, cutofffreq_low, padindata))
+        1.0 - getlpfftfunc(samplefreq, cutofffreq_low, padindata)
+    )
     indata_trans = indata_trans * filterfunc
     return unpadvec(sp.fftpack.ifft(indata_trans).real, padlen=padlen)
 
@@ -1585,14 +1782,33 @@ def dohptrapfftfilt(samplefreq, stopfreq, passfreq, indata, padlen=20):
     return unpadvec(sp.fftpack.ifft(indata_trans).real, padlen=padlen)
 
 
-def dobptrapfftfilt(samplefreq, stopfreq_low, passfreq_low, passfreq_high, stopfreq_high, indata, padlen=20):
+def dobptrapfftfilt(
+    samplefreq,
+    stopfreq_low,
+    passfreq_low,
+    passfreq_high,
+    stopfreq_high,
+    indata,
+    padlen=20,
+):
     padindata = padvec(indata, padlen=padlen)
     indata_trans = sp.fftpack.fft(padindata)
     if False:
-        print("samplefreq=", samplefreq, " Fstopl=", stopfreq_low, " Fpassl=", passfreq_low, " Fpassu=", passfreq_high,
-              " Fstopu=", stopfreq_high)
-    filterfunc = getlptrapfftfunc(samplefreq, passfreq_high, stopfreq_high, padindata) * (
-        1.0 - getlptrapfftfunc(samplefreq, stopfreq_low, passfreq_low, padindata))
+        print(
+            "samplefreq=",
+            samplefreq,
+            " Fstopl=",
+            stopfreq_low,
+            " Fpassl=",
+            passfreq_low,
+            " Fpassu=",
+            passfreq_high,
+            " Fstopu=",
+            stopfreq_high,
+        )
+    filterfunc = getlptrapfftfunc(
+        samplefreq, passfreq_high, stopfreq_high, padindata
+    ) * (1.0 - getlptrapfftfunc(samplefreq, stopfreq_low, passfreq_low, padindata))
     if False:
         freqs = np.arange(0.0, samplefreq, samplefreq / len(filterfunc))
         pl.plot(freqs, filterfunc)
@@ -1627,7 +1843,9 @@ def specsplit(samplerate, inputdata, bandwidth, usebutterworth=False):
     for theband in range(0, numbands):
         print("filtering from ", lowerlim, " to ", upperlim)
         if usebutterworth:
-            alldata[:, theband] = dobpfiltfilt(samplerate, lowerlim, upperlim, inputdata, 2)
+            alldata[:, theband] = dobpfiltfilt(
+                samplerate, lowerlim, upperlim, inputdata, 2
+            )
         else:
             alldata[:, theband] = dobpfftfilt(samplerate, lowerlim, upperlim, inputdata)
         bandcenters[theband] = np.sqrt(upperlim * lowerlim)
@@ -1636,55 +1854,100 @@ def specsplit(samplerate, inputdata, bandwidth, usebutterworth=False):
     return bandcenters, lowestfreq, upperlim, alldata
 
 
-@conditionaljit()
-def arb_pass(samplerate, inputdata, arb_lowerstop, arb_lowerpass, arb_upperpass, arb_upperstop,
-             usebutterworth=False, butterorder=defaultbutterorder,
-             usetrapfftfilt=True, padlen=20):
+# @conditionaljit()
+def arb_pass(
+    samplerate,
+    inputdata,
+    arb_lowerstop,
+    arb_lowerpass,
+    arb_upperpass,
+    arb_upperstop,
+    usebutterworth=False,
+    butterorder=defaultbutterorder,
+    usetrapfftfilt=True,
+    padlen=20,
+):
     # check filter limits to see if we should do a lowpass, bandpass, or highpass
     if arb_lowerpass <= 0.0:
         # set up for lowpass
         if usebutterworth:
-            return dolpfiltfilt(samplerate, arb_upperpass, inputdata, butterorder, padlen=padlen)
+            return dolpfiltfilt(
+                samplerate, arb_upperpass, inputdata, butterorder, padlen=padlen
+            )
         else:
             if usetrapfftfilt:
-                return dolptrapfftfilt(samplerate, arb_upperpass, arb_upperstop, inputdata, padlen=padlen)
+                return dolptrapfftfilt(
+                    samplerate, arb_upperpass, arb_upperstop, inputdata, padlen=padlen
+                )
             else:
                 return dolpfftfilt(samplerate, arb_upperpass, inputdata, padlen=padlen)
     elif (arb_upperpass >= samplerate / 2.0) or (arb_upperpass <= 0.0):
         # set up for highpass
         if usebutterworth:
-            return dohpfiltfilt(samplerate, arb_lowerpass, inputdata, butterorder, padlen=padlen)
+            return dohpfiltfilt(
+                samplerate, arb_lowerpass, inputdata, butterorder, padlen=padlen
+            )
         else:
             if usetrapfftfilt:
-                return dohptrapfftfilt(samplerate, arb_lowerstop, arb_lowerpass, inputdata, padlen=padlen)
+                return dohptrapfftfilt(
+                    samplerate, arb_lowerstop, arb_lowerpass, inputdata, padlen=padlen
+                )
             else:
                 return dohpfftfilt(samplerate, arb_lowerpass, inputdata, padlen=padlen)
     else:
         # set up for bandpass
         if usebutterworth:
-            return (dohpfiltfilt(samplerate, arb_lowerpass,
-                                 dolpfiltfilt(samplerate, arb_upperpass, inputdata, butterorder, padlen=padlen),
-                                 butterorder, padlen=padlen))
+            return dohpfiltfilt(
+                samplerate,
+                arb_lowerpass,
+                dolpfiltfilt(
+                    samplerate, arb_upperpass, inputdata, butterorder, padlen=padlen
+                ),
+                butterorder,
+                padlen=padlen,
+            )
         else:
             if usetrapfftfilt:
-                return (
-                    dobptrapfftfilt(samplerate, arb_lowerstop, arb_lowerpass, arb_upperpass, arb_upperstop, inputdata,
-                                    padlen=padlen))
+                return dobptrapfftfilt(
+                    samplerate,
+                    arb_lowerstop,
+                    arb_lowerpass,
+                    arb_upperpass,
+                    arb_upperstop,
+                    inputdata,
+                    padlen=padlen,
+                )
             else:
-                return dobpfftfilt(samplerate, arb_lowerpass, arb_upperpass, inputdata, padlen=padlen)
+                return dobpfftfilt(
+                    samplerate, arb_lowerpass, arb_upperpass, inputdata, padlen=padlen
+                )
 
 
-def ringstop(samplerate, inputdata, usebutterworth=False, butterorder=defaultbutterorder, usetrapfftfilt=True):
+def ringstop(
+    samplerate,
+    inputdata,
+    usebutterworth=False,
+    butterorder=defaultbutterorder,
+    usetrapfftfilt=True,
+):
     if usebutterworth:
         return dolpfiltfilt(samplerate, samplerate / 4.0, inputdata, butterorder), 2
     else:
         if usetrapfftfilt:
-            return dolptrapfftfilt(samplerate, samplerate / 4.0, 1.1 * samplerate / 4.0, inputdata)
+            return dolptrapfftfilt(
+                samplerate, samplerate / 4.0, 1.1 * samplerate / 4.0, inputdata
+            )
         else:
             return dolpfftfilt(samplerate, samplerate / 4.0, inputdata)
 
 
-def vlf_pass(samplerate, inputdata, usebutterworth=False, butterorder=defaultbutterorder, usetrapfftfilt=True):
+def vlf_pass(
+    samplerate,
+    inputdata,
+    usebutterworth=False,
+    butterorder=defaultbutterorder,
+    usetrapfftfilt=True,
+):
     if usebutterworth:
         return dolpfiltfilt(samplerate, VLF_UPPERPASS, inputdata, butterorder), 2
     else:
@@ -1694,44 +1957,95 @@ def vlf_pass(samplerate, inputdata, usebutterworth=False, butterorder=defaultbut
             return dolpfftfilt(samplerate, VLF_UPPERPASS, inputdata)
 
 
-def lfo_pass(samplerate, inputdata, usebutterworth=False, butterorder=defaultbutterorder, usetrapfftfilt=True):
+def lfo_pass(
+    samplerate,
+    inputdata,
+    usebutterworth=False,
+    butterorder=defaultbutterorder,
+    usetrapfftfilt=True,
+):
     if usebutterworth:
-        return (
-            dohpfiltfilt(samplerate, LF_LOWERPASS,
-                         dolpfiltfilt(samplerate, LF_UPPERPASS, inputdata, butterorder),
-                         2))
+        return dohpfiltfilt(
+            samplerate,
+            LF_LOWERPASS,
+            dolpfiltfilt(samplerate, LF_UPPERPASS, inputdata, butterorder),
+            2,
+        )
     else:
         if usetrapfftfilt:
-            return dobptrapfftfilt(samplerate, LF_LOWERSTOP, LF_LOWERPASS, LF_UPPERPASS, LF_UPPERSTOP, inputdata)
+            return dobptrapfftfilt(
+                samplerate,
+                LF_LOWERSTOP,
+                LF_LOWERPASS,
+                LF_UPPERPASS,
+                LF_UPPERSTOP,
+                inputdata,
+            )
         else:
             return dobpfftfilt(samplerate, LF_LOWERPASS, LF_UPPERPASS, inputdata)
 
 
-def resp_pass(samplerate, inputdata, usebutterworth=False, butterorder=defaultbutterorder, usetrapfftfilt=True):
+def resp_pass(
+    samplerate,
+    inputdata,
+    usebutterworth=False,
+    butterorder=defaultbutterorder,
+    usetrapfftfilt=True,
+):
     if usebutterworth:
-        return dobpfiltfilt(samplerate, RESP_LOWERPASS, RESP_UPPERPASS, inputdata, butterorder)
+        return dobpfiltfilt(
+            samplerate, RESP_LOWERPASS, RESP_UPPERPASS, inputdata, butterorder
+        )
     else:
         if usetrapfftfilt:
-            return (
-                dobptrapfftfilt(samplerate, RESP_LOWERSTOP, RESP_LOWERPASS, RESP_UPPERPASS, RESP_UPPERSTOP, inputdata))
+            return dobptrapfftfilt(
+                samplerate,
+                RESP_LOWERSTOP,
+                RESP_LOWERPASS,
+                RESP_UPPERPASS,
+                RESP_UPPERSTOP,
+                inputdata,
+            )
         else:
             return dobpfftfilt(samplerate, RESP_LOWERPASS, RESP_UPPERPASS, inputdata)
 
 
-def card_pass(samplerate, inputdata, usebutterworth=False, butterorder=defaultbutterorder, usetrapfftfilt=True):
+def card_pass(
+    samplerate,
+    inputdata,
+    usebutterworth=False,
+    butterorder=defaultbutterorder,
+    usetrapfftfilt=True,
+):
     if usebutterworth:
-        return dobpfiltfilt(samplerate, CARD_LOWERPASS, CARD_UPPERPASS, inputdata, butterorder)
+        return dobpfiltfilt(
+            samplerate, CARD_LOWERPASS, CARD_UPPERPASS, inputdata, butterorder
+        )
     else:
         if usetrapfftfilt:
-            return (
-                dobptrapfftfilt(samplerate, CARD_LOWERSTOP, CARD_LOWERPASS, CARD_UPPERPASS, CARD_UPPERSTOP, inputdata))
+            return dobptrapfftfilt(
+                samplerate,
+                CARD_LOWERSTOP,
+                CARD_LOWERPASS,
+                CARD_UPPERPASS,
+                CARD_UPPERSTOP,
+                inputdata,
+            )
         else:
             return dobpfftfilt(samplerate, CARD_LOWERPASS, CARD_UPPERPASS, inputdata)
 
 
 class noncausalfilter:
-    def __init__(self, filtertype='none', usebutterworth=False, butterworthorder=3, usetrapfftfilt=True,
-                 correctfreq=True, padtime=30.0, debug=False):
+    def __init__(
+        self,
+        filtertype="none",
+        usebutterworth=False,
+        butterworthorder=3,
+        usetrapfftfilt=True,
+        correctfreq=True,
+        padtime=30.0,
+        debug=False,
+    ):
         self.filtertype = filtertype
         self.arb_lowerpass = 0.05
         self.arb_lowerstop = 0.9 * self.arb_lowerpass
@@ -1751,27 +2065,27 @@ class noncausalfilter:
 
     def settype(self, thetype):
         self.filtertype = thetype
-        if self.filtertype == 'vlf' or self.filtertype == 'vlf_stop':
+        if self.filtertype == "vlf" or self.filtertype == "vlf_stop":
             self.lowerstop = 0.0
             self.lowerpass = 0.0
             self.upperpass = 1.0 * VLF_UPPERPASS
             self.upperstop = 1.0 * VLF_UPPERSTOP
-        elif self.filtertype == 'lfo' or self.filtertype == 'lfo_stop':
+        elif self.filtertype == "lfo" or self.filtertype == "lfo_stop":
             self.lowerstop = 1.0 * LF_LOWERSTOP
             self.lowerpass = 1.0 * LF_LOWERPASS
             self.upperpass = 1.0 * LF_UPPERPASS
             self.upperstop = 1.0 * LF_UPPERSTOP
-        elif self.filtertype == 'resp' or self.filtertype == 'resp_stop':
+        elif self.filtertype == "resp" or self.filtertype == "resp_stop":
             self.lowerstop = 1.0 * RESP_LOWERSTOP
             self.lowerpass = 1.0 * RESP_LOWERPASS
             self.upperpass = 1.0 * RESP_UPPERPASS
             self.upperstop = 1.0 * RESP_UPPERSTOP
-        elif self.filtertype == 'cardiac' or self.filtertype == 'cardiac_stop':
+        elif self.filtertype == "cardiac" or self.filtertype == "cardiac_stop":
             self.lowerstop = 1.0 * CARD_LOWERSTOP
             self.lowerpass = 1.0 * CARD_LOWERPASS
             self.upperpass = 1.0 * CARD_UPPERPASS
             self.upperstop = 1.0 * CARD_UPPERSTOP
-        elif self.filtertype == 'arb' or self.filtertype == 'arb_stop':
+        elif self.filtertype == "arb" or self.filtertype == "arb_stop":
             self.lowerstop = 1.0 * self.arb_lowerstop
             self.lowerpass = 1.0 * self.arb_lowerpass
             self.upperpass = 1.0 * self.arb_upperpass
@@ -1803,10 +2117,14 @@ class noncausalfilter:
 
     def setarb(self, lowerstop, lowerpass, upperpass, upperstop):
         if not (lowerstop <= lowerpass < upperpass):
-            print('noncausalfilter error: lowerpass must be between lowerstop and upperpass')
+            print(
+                "noncausalfilter error: lowerpass must be between lowerstop and upperpass"
+            )
             sys.exit()
         if not (lowerpass < upperpass <= upperstop):
-            print('noncausalfilter error: upperpass must be between lowerpass and upperstop')
+            print(
+                "noncausalfilter error: upperpass must be between lowerpass and upperstop"
+            )
             sys.exit()
         self.arb_lowerstop = 1.0 * lowerstop
         self.arb_lowerpass = 1.0 * lowerpass
@@ -1825,83 +2143,149 @@ class noncausalfilter:
             if self.correctfreq:
                 self.upperpass = nyquistlimit
             else:
-                print('noncausalfilter error: filter upper pass ', self.upperpass, ' exceeds nyquist frequency ',
-                      nyquistlimit)
+                print(
+                    "noncausalfilter error: filter upper pass ",
+                    self.upperpass,
+                    " exceeds nyquist frequency ",
+                    nyquistlimit,
+                )
                 sys.exit()
         if self.upperstop > nyquistlimit:
             if self.correctfreq:
                 self.upperstop = nyquistlimit
             else:
-                print('noncausalfilter error: filter upper stop ', self.upperstop, ' exceeds nyquist frequency ',
-                      nyquistlimit)
+                print(
+                    "noncausalfilter error: filter upper stop ",
+                    self.upperstop,
+                    " exceeds nyquist frequency ",
+                    nyquistlimit,
+                )
                 sys.exit()
         if self.lowerpass < lowestfreq:
             if self.correctfreq:
                 self.lowerpass = lowestfreq
             else:
-                print('noncausalfilter error: filter lower pass ', self.lowerpass, ' is below minimum frequency ',
-                      lowestfreq)
+                print(
+                    "noncausalfilter error: filter lower pass ",
+                    self.lowerpass,
+                    " is below minimum frequency ",
+                    lowestfreq,
+                )
                 sys.exit()
         if self.lowerstop < lowestfreq:
             if self.correctfreq:
                 self.lowerstop = lowestfreq
             else:
-                print('noncausalfilter error: filter lower stop ', self.lowerstop, ' is below minimum frequency ',
-                      lowestfreq)
+                print(
+                    "noncausalfilter error: filter lower stop ",
+                    self.lowerstop,
+                    " is below minimum frequency ",
+                    lowestfreq,
+                )
                 sys.exit()
 
         padlen = int(self.padtime * samplerate)
         if self.debug:
-            print('samplerate=', samplerate)
-            print('lowerstop=', self.lowerstop)
-            print('lowerpass=', self.lowerpass)
-            print('upperpass=', self.upperpass)
-            print('upperstop=', self.upperstop)
-            print('usebutterworth=', self.usebutterworth)
-            print('butterworthorder=', self.butterworthorder)
-            print('usetrapfftfilt=', self.usetrapfftfilt)
-            print('padtime=', self.padtime)
-            print('padlen=', padlen)
+            print("samplerate=", samplerate)
+            print("lowerstop=", self.lowerstop)
+            print("lowerpass=", self.lowerpass)
+            print("upperpass=", self.upperpass)
+            print("upperstop=", self.upperstop)
+            print("usebutterworth=", self.usebutterworth)
+            print("butterworthorder=", self.butterworthorder)
+            print("usetrapfftfilt=", self.usetrapfftfilt)
+            print("padtime=", self.padtime)
+            print("padlen=", padlen)
 
         # now do the actual filtering
-        if self.filtertype == 'none':
+        if self.filtertype == "none":
             return data
-        elif self.filtertype == 'ringstop':
-            return (arb_pass(samplerate, data,
-                             0.0, 0.0, samplerate / 4.0, 1.1 * samplerate / 4.0,
-                             usebutterworth=self.usebutterworth, butterorder=self.butterworthorder,
-                             usetrapfftfilt=self.usetrapfftfilt, padlen=padlen))
-        elif self.filtertype == 'vlf' or self.filtertype == 'lfo' \
-                or self.filtertype == 'resp' or self.filtertype == 'cardiac':
-            return (arb_pass(samplerate, data,
-                             self.lowerstop, self.lowerpass, self.upperpass, self.upperstop,
-                             usebutterworth=self.usebutterworth, butterorder=self.butterworthorder,
-                             usetrapfftfilt=self.usetrapfftfilt, padlen=padlen))
-        elif self.filtertype == 'vlf_stop' or self.filtertype == 'lfo_stop' \
-                or self.filtertype == 'resp_stop' or self.filtertype == 'cardiac_stop':
-            return (data - arb_pass(samplerate, data,
-                                    self.lowerstop, self.lowerpass, self.upperpass, self.upperstop,
-                                    usebutterworth=self.usebutterworth, butterorder=self.butterworthorder,
-                                    usetrapfftfilt=self.usetrapfftfilt, padlen=padlen))
-        elif self.filtertype == 'arb':
-            return (arb_pass(samplerate, data,
-                             self.arb_lowerstop, self.arb_lowerpass, self.arb_upperpass, self.arb_upperstop,
-                             usebutterworth=self.usebutterworth, butterorder=self.butterworthorder,
-                             usetrapfftfilt=self.usetrapfftfilt, padlen=padlen))
-        elif self.filtertype == 'arb_stop':
-            return (data - arb_pass(samplerate, data,
-                                    self.arb_lowerstop, self.arb_lowerpass, self.arb_upperpass, self.arb_upperstop,
-                                    usebutterworth=self.usebutterworth, butterorder=self.butterworthorder,
-                                    usetrapfftfilt=self.usetrapfftfilt, padlen=padlen))
+        elif self.filtertype == "ringstop":
+            return arb_pass(
+                samplerate,
+                data,
+                0.0,
+                0.0,
+                samplerate / 4.0,
+                1.1 * samplerate / 4.0,
+                usebutterworth=self.usebutterworth,
+                butterorder=self.butterworthorder,
+                usetrapfftfilt=self.usetrapfftfilt,
+                padlen=padlen,
+            )
+        elif (
+            self.filtertype == "vlf"
+            or self.filtertype == "lfo"
+            or self.filtertype == "resp"
+            or self.filtertype == "cardiac"
+        ):
+            return arb_pass(
+                samplerate,
+                data,
+                self.lowerstop,
+                self.lowerpass,
+                self.upperpass,
+                self.upperstop,
+                usebutterworth=self.usebutterworth,
+                butterorder=self.butterworthorder,
+                usetrapfftfilt=self.usetrapfftfilt,
+                padlen=padlen,
+            )
+        elif (
+            self.filtertype == "vlf_stop"
+            or self.filtertype == "lfo_stop"
+            or self.filtertype == "resp_stop"
+            or self.filtertype == "cardiac_stop"
+        ):
+            return data - arb_pass(
+                samplerate,
+                data,
+                self.lowerstop,
+                self.lowerpass,
+                self.upperpass,
+                self.upperstop,
+                usebutterworth=self.usebutterworth,
+                butterorder=self.butterworthorder,
+                usetrapfftfilt=self.usetrapfftfilt,
+                padlen=padlen,
+            )
+        elif self.filtertype == "arb":
+            return arb_pass(
+                samplerate,
+                data,
+                self.arb_lowerstop,
+                self.arb_lowerpass,
+                self.arb_upperpass,
+                self.arb_upperstop,
+                usebutterworth=self.usebutterworth,
+                butterorder=self.butterworthorder,
+                usetrapfftfilt=self.usetrapfftfilt,
+                padlen=padlen,
+            )
+        elif self.filtertype == "arb_stop":
+            return data - arb_pass(
+                samplerate,
+                data,
+                self.arb_lowerstop,
+                self.arb_lowerpass,
+                self.arb_upperpass,
+                self.arb_upperstop,
+                usebutterworth=self.usebutterworth,
+                butterorder=self.butterworthorder,
+                usetrapfftfilt=self.usetrapfftfilt,
+                padlen=padlen,
+            )
         else:
             print("bad filter type")
             sys.exit()
 
 
 # --------------------------- Utility functions -------------------------------------------------
-def progressbar(thisval, end_val, label='Percent', barsize=60):
+def progressbar(thisval, end_val, label="Percent", barsize=60):
     percent = float(thisval) / end_val
-    hashes = '#' * int(round(percent * barsize))
-    spaces = ' ' * (barsize - len(hashes))
-    sys.stdout.write("\r{0}: [{1}] {2:.3f}%".format(label, hashes + spaces, 100.0 * percent))
+    hashes = "#" * int(round(percent * barsize))
+    spaces = " " * (barsize - len(hashes))
+    sys.stdout.write(
+        "\r{0}: [{1}] {2:.3f}%".format(label, hashes + spaces, 100.0 * percent)
+    )
     sys.stdout.flush()
