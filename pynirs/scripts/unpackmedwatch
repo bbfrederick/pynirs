@@ -230,20 +230,30 @@ for sensornum, sensordict in alldata.items():
     writebidstsv(outputname, np.transpose(outputdata), samplerate, columns=colnames)
 
 for sensornum, sensordict in alldata.items():
-    print("Start Time: 09:45:47.545000")
-    print(f"Sample Rate: {samplerate}Hz")
-    print(f"Used LFO Channel Number: CH{sensornum}")
-    print("IR:infrared, VS:visible(red), E:External Marker, B:Button Marker, T:Toggle Marker, S:Synchronous Marker, C:Calibrate Marker")
-    outputname = inputdatafile.replace("RAW", f"UNPACK_{sensornum}").replace(".txt", "")
-    colnames = ["Time",f"CH{sensornum}-IR",f"CH{sensornum}-VS","TTL-IN","TTL-OUT","ADC1","ADC2","DAC","E","B","T","S","C"]
+    d = {}
+    #print("Start Time: 09:45:47.545000")
+    #print(f"Sample Rate: {samplerate}Hz")
+    #print(f"Used LFO Channel Number: CH{sensornum}")
+    #print("IR:infrared, VS:visible(red), E:External Marker, B:Button Marker, T:Toggle Marker, S:Synchronous Marker, C:Calibrate Marker")
+    outputname = inputdatafile.replace("RAW", f"UNPACK_PLETHPROC_{sensornum}").replace(".txt", "")
+    cols = ["Time","CH1-IR","CH1-VS","TTL-IN","TTL-OUT","ADC1","ADC2","DAC","E","B","T","S","C"]
     numdatapoints = len(sensordict['raw'])
     print(f"sensor {sensornum} has {numdatapoints} items")
-    outputdata = np.zeros((numdatapoints, 11), dtype=float)
-    outputdata[:, 0] = np.linspace(0, numdatapoints, numdatapoints, endpoint=False) / samplerate
-    outputdata[:, 1:3] = np.asarray(sensordict['raw'], dtype=float)
-    outputdata[:, 3:6] = np.asarray(sensordict['ecg'], dtype=float)
-    outputdata[:, 6:9] = np.asarray(sensordict['accel'], dtype=float)
-    outputdata[:, 9] = np.asarray(sensordict['spo2'], dtype=float)
-    outputdata[:, 10] = np.asarray(sensordict['bpm'], dtype=float)
-    writebidstsv(outputname, np.transpose(outputdata), samplerate, columns=colnames)
+    d["Time"]= np.linspace(0, numdatapoints, numdatapoints, endpoint=False) / samplerate
+    d["CH1-IR"] = np.asarray(sensordict['raw'], dtype=float)[:, 0]
+    d["CH1-VS"] = np.asarray(sensordict['raw'], dtype=float)[:, 1]
 
+    d["TTL-IN"] = np.zeros(numdatapoints, dtype=float)
+    d["TTL-OUT"] = np.zeros(numdatapoints, dtype=float)
+    d["ADC1"] = np.zeros(numdatapoints, dtype=float)
+    d["ADC2"] = np.zeros(numdatapoints, dtype=float)
+    d["DAC"] = np.zeros(numdatapoints, dtype=float)
+    d["E"] = np.zeros(numdatapoints, dtype=float)
+    d["B"] = np.zeros(numdatapoints, dtype=float)
+    d["T"] = np.zeros(numdatapoints, dtype=float)
+    d["S"] = np.zeros(numdatapoints, dtype=float)
+    d["C"] = np.zeros(numdatapoints, dtype=float)
+
+    df = pd.DataFrame(data=d)
+    df = df[cols]
+    df.to_csv(outputname + "_alldata.txt", sep="\t", index=False)
