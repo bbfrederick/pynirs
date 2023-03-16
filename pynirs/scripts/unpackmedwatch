@@ -1,0 +1,230 @@
+#!/usr/bin/env python
+import pandas as pd
+import numpy as np
+import json
+
+def writebidstsv(
+    outputfileroot,
+    data,
+    samplerate,
+    compressed=True,
+    columns=None,
+    starttime=0.0,
+    append=False,
+    colsinjson=True,
+    colsintsv=False,
+    omitjson=False,
+    debug=False,
+):
+    """
+    NB: to be strictly valid, a continuous BIDS tsv file (i.e. a "_physio" or "_stim" file) requires:
+    1) The .tsv is compressed (.tsv.gz)
+    2) "SamplingFrequency", "StartTime", "Columns" must exist and be in the .json file
+    3) The tsv file does NOT have column headers.
+    4) "_physio" or "_stim" has to be at the end of the name, although this seems a little flexible
+
+    The first 3 are the defaults, but if you really want to override them, you can.
+
+    :param outputfileroot:
+    :param data:
+    :param samplerate:
+    :param compressed:
+    :param columns:
+    :param starttime:
+    :param append:
+    :param colsinjson:
+    :param colsintsv:
+    :param omitjson:
+    :param debug:
+    :return:
+    """
+    if debug:
+        print("entering writebidstsv:")
+        print("\toutputfileroot:", outputfileroot)
+        print("\tdata.shape:", data.shape)
+        print("\tsamplerate:", samplerate)
+        print("\tcompressed:", compressed)
+        print("\tcolumns:", columns)
+        print("\tstarttime:", starttime)
+        print("\tappend:", append)
+    if len(data.shape) == 1:
+        reshapeddata = data.reshape((1, -1))
+        if debug:
+            print("input data reshaped from", data.shape, "to", reshapeddata.shape)
+    else:
+        reshapeddata = data
+    if append:
+        insamplerate, instarttime, incolumns, indata, incompressed = readbidstsv(
+            outputfileroot + ".json", debug=debug
+        )
+        if debug:
+            print("appending")
+            print(insamplerate, instarttime, incolumns, indata, incompressed)
+        if insamplerate is None:
+            # file does not already exist
+            if debug:
+                print("creating file:", data.shape, columns, samplerate)
+            startcol = 0
+        else:
+            # file does already exist
+            if debug:
+                print(
+                    "appending:",
+                    insamplerate,
+                    instarttime,
+                    incolumns,
+                    indata.shape,
+                    reshapeddata.shape,
+                )
+            compressed = incompressed
+            if (
+                (insamplerate == samplerate)
+                and (instarttime == starttime)
+                and reshapeddata.shape[1] == indata.shape[1]
+            ):
+                startcol = len(incolumns)
+            else:
+                print("data dimensions not compatible with existing dimensions")
+                print(samplerate, insamplerate)
+                print(starttime, instarttime)
+                print(columns, incolumns)
+                print(indata.shape, reshapeddata.shape)
+                sys.exit()
+    else:
+        startcol = 0
+
+    if columns is None:
+        columns = []
+        for i in range(reshapeddata.shape[0]):
+            columns.append(f"col_{(i + startcol).zfill(2)}")
+    else:
+        if len(columns) != reshapeddata.shape[0]:
+            raise ValueError(
+                f"number of column names ({len(columns)}) ",
+                f"does not match number of columns ({reshapeddata.shape[1]}) in data",
+            )
+    if startcol > 0:
+        df = pd.DataFrame(data=np.transpose(indata), columns=incolumns)
+        for i in range(len(columns)):
+            df[columns[i]] = reshapeddata[i, :]
+    else:
+        df = pd.DataFrame(data=np.transpose(reshapeddata), columns=columns)
+    if compressed:
+        df.to_csv(
+            outputfileroot + ".tsv.gz", sep="\t", compression="gzip", header=colsintsv, index=False
+        )
+    else:
+        df.to_csv(
+            outputfileroot + ".tsv", sep="\t", compression=None, header=colsintsv, index=False
+        )
+    headerdict = {}
+    headerdict["SamplingFrequency"] = samplerate
+    headerdict["StartTime"] = starttime
+    if colsinjson:
+        if startcol == 0:
+            headerdict["Columns"] = columns
+        else:
+            headerdict["Columns"] = incolumns + columns
+
+    if not omitjson:
+        with open(outputfileroot + ".json", "wb") as fp:
+            fp.write(
+                json.dumps(headerdict, sort_keys=True, indent=4, separators=(",", ":")).encode(
+                    "utf-8"
+                )
+            )
+
+
+ 
+def unpackline(theline):
+    # theline consists of 27 bytes.  The first two bytes identify the device
+    id = theline[0:2]
+    spo2offset = 13
+    ecgoffset = 3
+    ir_rawoffset = 14
+    red_rawoffset = 17
+    acceloffset = 20
+    bpmoffset = 11
+
+    spo2 = theline[spo2offset]
+
+    ecg_1 = 256.0 * theline[ecgoffset]     + 1.0 * theline[ecgoffset + 1]
+    ecg_2 = 256.0 * theline[ecgoffset + 2] + 1.0 * theline[ecgoffset + 3]
+    ecg_3 = 256.0 * theline[ecgoffset + 4] + 1.0 * theline[ecgoffset + 5]
+
+    ir_raw =  65536.0 * theline[ir_rawoffset]  + 256.0 * theline[ir_rawoffset + 1]  + 1.0 * theline[ir_rawoffset + 2]
+    red_raw = 65536.0 * theline[red_rawoffset] + 256.0 * theline[red_rawoffset + 1] + 1.0 * theline[red_rawoffset + 2]
+
+    axx= 256.0 * theline[acceloffset]     + 1.0 * theline[acceloffset + 1]
+    axy= 256.0 * theline[acceloffset + 2] + 1.0 * theline[acceloffset + 3]
+    axz= 256.0 * theline[acceloffset + 4] + 1.0 * theline[acceloffset + 5]
+
+    bpm= 256.0 * theline[bpmoffset] + 1.0 * theline[bpmoffset + 1]
+
+    return id, [ir_raw, red_raw], [ecg_1, ecg_2, ecg_3], [axx, axy, axz], bpm, spo2
+
+inputdatafile = 'RAW_20230308_143118267.txt'
+samplerate = 33.0
+
+with open(inputdatafile, 'rb') as file:
+   df = file.read()
+   
+numlines = int(len(df) / 27)
+
+# read the file in line by line
+alldata = {}
+numvalidlines = 0
+for i in range(numlines):
+    startpos = i * 27
+    id, raw, ecg, accel, bpm, spo2 = unpackline(df[startpos:startpos + 27])
+    if id[0] != 35:
+        print("invalid packet")
+    else:
+        numvalidlines += 1
+        sensornum = str(id[1])
+        try:
+            dummy = alldata[sensornum]
+        except KeyError:
+            print(f"initializing {sensornum} {id[1]}")
+            alldata[sensornum] = {}
+            alldata[sensornum]['sensornum'] = sensornum
+            alldata[sensornum]['fileline'] = []
+            alldata[sensornum]['raw'] = []
+            alldata[sensornum]['ecg'] = []
+            alldata[sensornum]['accel'] = []
+            alldata[sensornum]['spo2'] = []
+            alldata[sensornum]['bpm'] = []            
+        alldata[sensornum]['fileline'].append(i)
+        alldata[sensornum]['raw'].append(raw)
+        alldata[sensornum]['ecg'].append(ecg)
+        alldata[sensornum]['accel'].append(accel)
+        alldata[sensornum]['spo2'].append(spo2)
+        alldata[sensornum]['bpm'].append(bpm)
+print("data read complete")
+
+# Figure out the time that each line was recorded - find missing points
+sensorlimits = {}
+maxlen = 0
+for sensornum, sensordict in alldata.items():
+    sensorlimits[sensornum] = (sensordict['fileline'][0], sensordict['fileline'][-1])
+    print(f"sensor {sensornum} recording begins at line {sensorlimits[sensornum][0]} and ends at line {sensorlimits[sensornum][1]}")
+    if len(sensordict['fileline']) > maxlen:
+        maxlen = len(sensordict['fileline'])
+        numsensors = np.median(np.diff(np.asarray(sensordict['fileline'], dtype=int)))
+        maxsensor = sensornum
+
+print(f"sensor with most points is {maxsensor} with length {maxlen}.  Number of sensors is {numsensors}")
+    
+colnames = ["linenumber", "irraw,", "redraw", "ecg1", "ecg2", "ecg3", "axx", "axy", "axz", "spo2", "bpm"]
+for sensornum, sensordict in alldata.items():
+    outputname = inputdatafile.replace("RAW", f"UNPACK_{sensornum}").replace(".txt", "")
+    numdatapoints = len(sensordict['raw'])
+    print(f"sensor {sensornum} has {numdatapoints} items")
+    outputdata = np.zeros((numdatapoints, 11), dtype=float)
+    outputdata[:, 0] = np.asarray(sensordict['fileline'], dtype=float)
+    outputdata[:, 1:3] = np.asarray(sensordict['raw'], dtype=float)
+    outputdata[:, 3:6] = np.asarray(sensordict['ecg'], dtype=float)
+    outputdata[:, 6:9] = np.asarray(sensordict['accel'], dtype=float)
+    outputdata[:, 9] = np.asarray(sensordict['spo2'], dtype=float)
+    outputdata[:, 10] = np.asarray(sensordict['bpm'], dtype=float)
+    writebidstsv(outputname, np.transpose(outputdata), samplerate, columns=colnames)

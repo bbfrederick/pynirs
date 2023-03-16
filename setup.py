@@ -30,6 +30,7 @@ modules_list= ['pynirs/cbv_funcs', 'pynirs/spo2funcs']
 
 script_list = ['pynirs/scripts/plethproc',
                'pynirs/scripts/denoise',
+               'pynirs/scripts/unpackmedwatch',
                'pynirs/scripts/checkfnirs',
                 ]
 
