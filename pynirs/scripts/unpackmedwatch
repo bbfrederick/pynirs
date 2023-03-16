@@ -2,6 +2,45 @@
 import pandas as pd
 import numpy as np
 import json
+import argparse
+
+def _get_parser():
+    """
+    Argument parser for pixelcomp
+    """
+    parser = argparse.ArgumentParser(
+        prog="unpackmedwatch",
+        description=("Unpack the data from a medwatch session and output to one text file per sensor"),
+        usage="%(prog)s inputfile [options]",
+    )
+
+    # Required arguments
+    parser.add_argument(
+        "inputfile", type=str, help="The name of the medwatch recording."
+    )
+    parser.add_argument(
+        "outputfile", type=str, help="The root name of the output files."
+    )
+
+    # add optional arguments
+    parser.add_argument(
+        "--samplerate",
+        action="store",
+        type=float,
+        metavar="RATE",
+        help=("Sample rate in Hz.  Default is 33.0."),
+        default=33.0,
+    )
+    parser.add_argument(
+        "--plethfile",
+        action="store",
+        type=str,
+        metavar="NAME",
+        help=("Name of an optional output file in plethproc input format."),
+        default=None,
+    )
+    return parser
+
 
 def writebidstsv(
     outputfileroot,
@@ -163,97 +202,104 @@ def unpackline(theline):
 
     return id, [ir_raw, red_raw], [ecg_1, ecg_2, ecg_3], [axx, axy, axz], bpm, spo2
 
-inputdatafile = 'RAW_20230308_143118267.txt'
-samplerate = 33.0
 
-with open(inputdatafile, 'rb') as file:
-   df = file.read()
+def main():
+    # read the arguments
+    try:
+        args = _get_parser().parse_args()
+    except SystemExit:
+        _get_parser().print_help()
+        raise
+
+    with open(args.inputfile, 'rb') as file:
+       df = file.read()
    
-numlines = int(len(df) / 27)
+    numlines = int(len(df) / 27)
 
-# read the file in line by line
-alldata = {}
-numvalidlines = 0
-for i in range(numlines):
-    startpos = i * 27
-    id, raw, ecg, accel, bpm, spo2 = unpackline(df[startpos:startpos + 27])
-    if id[0] != 35:
-        print("invalid packet")
-    else:
-        numvalidlines += 1
-        sensornum = str(id[1])
-        try:
-            dummy = alldata[sensornum]
-        except KeyError:
-            print(f"initializing {sensornum} {id[1]}")
-            alldata[sensornum] = {}
-            alldata[sensornum]['sensornum'] = sensornum
-            alldata[sensornum]['fileline'] = []
-            alldata[sensornum]['raw'] = []
-            alldata[sensornum]['ecg'] = []
-            alldata[sensornum]['accel'] = []
-            alldata[sensornum]['spo2'] = []
-            alldata[sensornum]['bpm'] = []            
-        alldata[sensornum]['fileline'].append(i)
-        alldata[sensornum]['raw'].append(raw)
-        alldata[sensornum]['ecg'].append(ecg)
-        alldata[sensornum]['accel'].append(accel)
-        alldata[sensornum]['spo2'].append(spo2)
-        alldata[sensornum]['bpm'].append(bpm)
-print("data read complete")
-
-# Figure out the time that each line was recorded - find missing points
-sensorlimits = {}
-maxlen = 0
-for sensornum, sensordict in alldata.items():
-    sensorlimits[sensornum] = (sensordict['fileline'][0], sensordict['fileline'][-1])
-    print(f"sensor {sensornum} recording begins at line {sensorlimits[sensornum][0]} and ends at line {sensorlimits[sensornum][1]}")
-    if len(sensordict['fileline']) > maxlen:
-        maxlen = len(sensordict['fileline'])
-        numsensors = np.median(np.diff(np.asarray(sensordict['fileline'], dtype=int)))
-        maxsensor = sensornum
-
-print(f"sensor with most points is {maxsensor} with length {maxlen}.  Number of sensors is {numsensors}")
+    # read the file in line by line
+    alldata = {}
+    numvalidlines = 0
+    for i in range(numlines):
+        startpos = i * 27
+        id, raw, ecg, accel, bpm, spo2 = unpackline(df[startpos:startpos + 27])
+        if id[0] != 35:
+            print("invalid packet")
+        else:
+            numvalidlines += 1
+            sensornum = str(id[1])
+            try:
+                dummy = alldata[sensornum]
+            except KeyError:
+                print(f"initializing {sensornum} {id[1]}")
+                alldata[sensornum] = {}
+                alldata[sensornum]['sensornum'] = sensornum
+                alldata[sensornum]['fileline'] = []
+                alldata[sensornum]['raw'] = []
+                alldata[sensornum]['ecg'] = []
+                alldata[sensornum]['accel'] = []
+                alldata[sensornum]['spo2'] = []
+                alldata[sensornum]['bpm'] = []            
+            alldata[sensornum]['fileline'].append(i)
+            alldata[sensornum]['raw'].append(raw)
+            alldata[sensornum]['ecg'].append(ecg)
+            alldata[sensornum]['accel'].append(accel)
+            alldata[sensornum]['spo2'].append(spo2)
+            alldata[sensornum]['bpm'].append(bpm)
+    print("data read complete")
     
-colnames = ["time", "irraw,", "redraw", "ecg1", "ecg2", "ecg3", "axx", "axy", "axz", "spo2", "bpm"]
-for sensornum, sensordict in alldata.items():
-    outputname = inputdatafile.replace("RAW", f"UNPACK_{sensornum}").replace(".txt", "")
-    numdatapoints = len(sensordict['raw'])
-    print(f"sensor {sensornum} has {numdatapoints} items")
-    outputdata = np.zeros((numdatapoints, 11), dtype=float)
-    outputdata[:, 0] = np.linspace(0, numdatapoints, numdatapoints, endpoint=False) / samplerate
-    outputdata[:, 1:3] = np.asarray(sensordict['raw'], dtype=float)
-    outputdata[:, 3:6] = np.asarray(sensordict['ecg'], dtype=float)
-    outputdata[:, 6:9] = np.asarray(sensordict['accel'], dtype=float)
-    outputdata[:, 9] = np.asarray(sensordict['spo2'], dtype=float)
-    outputdata[:, 10] = np.asarray(sensordict['bpm'], dtype=float)
-    writebidstsv(outputname, np.transpose(outputdata), samplerate, columns=colnames)
-
-for sensornum, sensordict in alldata.items():
-    d = {}
-    #print("Start Time: 09:45:47.545000")
-    #print(f"Sample Rate: {samplerate}Hz")
-    #print(f"Used LFO Channel Number: CH{sensornum}")
-    #print("IR:infrared, VS:visible(red), E:External Marker, B:Button Marker, T:Toggle Marker, S:Synchronous Marker, C:Calibrate Marker")
-    outputname = inputdatafile.replace("RAW", f"UNPACK_PLETHPROC_{sensornum}").replace(".txt", "")
-    cols = ["Time","CH1-IR","CH1-VS","TTL-IN","TTL-OUT","ADC1","ADC2","DAC","E","B","T","S","C"]
-    numdatapoints = len(sensordict['raw'])
-    print(f"sensor {sensornum} has {numdatapoints} items")
-    d["Time"]= np.linspace(0, numdatapoints, numdatapoints, endpoint=False) / samplerate
-    d["CH1-IR"] = np.asarray(sensordict['raw'], dtype=float)[:, 0]
-    d["CH1-VS"] = np.asarray(sensordict['raw'], dtype=float)[:, 1]
-
-    d["TTL-IN"] = np.zeros(numdatapoints, dtype=float)
-    d["TTL-OUT"] = np.zeros(numdatapoints, dtype=float)
-    d["ADC1"] = np.zeros(numdatapoints, dtype=float)
-    d["ADC2"] = np.zeros(numdatapoints, dtype=float)
-    d["DAC"] = np.zeros(numdatapoints, dtype=float)
-    d["E"] = np.zeros(numdatapoints, dtype=float)
-    d["B"] = np.zeros(numdatapoints, dtype=float)
-    d["T"] = np.zeros(numdatapoints, dtype=float)
-    d["S"] = np.zeros(numdatapoints, dtype=float)
-    d["C"] = np.zeros(numdatapoints, dtype=float)
-
-    df = pd.DataFrame(data=d)
-    df = df[cols]
-    df.to_csv(outputname + "_alldata.txt", sep="\t", index=False)
+    # Figure out the time that each line was recorded - find missing points
+    sensorlimits = {}
+    maxlen = 0
+    for sensornum, sensordict in alldata.items():
+        sensorlimits[sensornum] = (sensordict['fileline'][0], sensordict['fileline'][-1])
+        print(f"sensor {sensornum} recording begins at line {sensorlimits[sensornum][0]} and ends at line {sensorlimits[sensornum][1]}")
+        if len(sensordict['fileline']) > maxlen:
+            maxlen = len(sensordict['fileline'])
+            numsensors = np.median(np.diff(np.asarray(sensordict['fileline'], dtype=int)))
+            maxsensor = sensornum
+    
+    print(f"sensor with most points is {maxsensor} with length {maxlen}.  Number of sensors is {numsensors}")
+        
+    colnames = ["time", "irraw,", "redraw", "ecg1", "ecg2", "ecg3", "axx", "axy", "axz", "spo2", "bpm"]
+    for sensornum, sensordict in alldata.items():
+        numdatapoints = len(sensordict['raw'])
+        print(f"sensor {sensornum} has {numdatapoints} items")
+        outputdata = np.zeros((numdatapoints, 11), dtype=float)
+        outputdata[:, 0] = np.linspace(0, numdatapoints, numdatapoints, endpoint=False) / args.samplerate
+        outputdata[:, 1:3] = np.asarray(sensordict['raw'], dtype=float)
+        outputdata[:, 3:6] = np.asarray(sensordict['ecg'], dtype=float)
+        outputdata[:, 6:9] = np.asarray(sensordict['accel'], dtype=float)
+        outputdata[:, 9] = np.asarray(sensordict['spo2'], dtype=float)
+        outputdata[:, 10] = np.asarray(sensordict['bpm'], dtype=float)
+        writebidstsv(f"{args.outputfile}_{sensornum}", np.transpose(outputdata), args.samplerate, columns=colnames)
+    
+    for sensornum, sensordict in alldata.items():
+        d = {}
+        #print("Start Time: 09:45:47.545000")
+        #print(f"Sample Rate: {samplerate}Hz")
+        #print(f"Used LFO Channel Number: CH{sensornum}")
+        #print("IR:infrared, VS:visible(red), E:External Marker, B:Button Marker, T:Toggle Marker, S:Synchronous Marker, C:Calibrate Marker")
+        cols = ["Time","CH1-IR","CH1-VS","TTL-IN","TTL-OUT","ADC1","ADC2","DAC","E","B","T","S","C"]
+        numdatapoints = len(sensordict['raw'])
+        print(f"sensor {sensornum} has {numdatapoints} items")
+        d["Time"]= np.linspace(0, numdatapoints, numdatapoints, endpoint=False) / args.samplerate
+        d["CH1-IR"] = np.asarray(sensordict['raw'], dtype=float)[:, 0]
+        d["CH1-VS"] = np.asarray(sensordict['raw'], dtype=float)[:, 1]
+    
+        d["TTL-IN"] = np.zeros(numdatapoints, dtype=float)
+        d["TTL-OUT"] = np.zeros(numdatapoints, dtype=float)
+        d["ADC1"] = np.zeros(numdatapoints, dtype=float)
+        d["ADC2"] = np.zeros(numdatapoints, dtype=float)
+        d["DAC"] = np.zeros(numdatapoints, dtype=float)
+        d["E"] = np.zeros(numdatapoints, dtype=float)
+        d["B"] = np.zeros(numdatapoints, dtype=float)
+        d["T"] = np.zeros(numdatapoints, dtype=float)
+        d["S"] = np.zeros(numdatapoints, dtype=float)
+        d["C"] = np.zeros(numdatapoints, dtype=float)
+    
+        df = pd.DataFrame(data=d)
+        df = df[cols]
+        df.to_csv(f"{args.plethfile}_{sensornum}.txt", sep="\t", index=False)
+    
+if __name__ == "__main__":
+    main()
