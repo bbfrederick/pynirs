@@ -13,6 +13,7 @@ import sys
 import numpy as np
 import pandas as pd
 import pylab as plt
+
 # from numpy import NaN, Inf, arange, isscalar, asarray, array
 import pywt
 import rapidtide.filter as tide_filt
@@ -933,7 +934,7 @@ def despike(invec):
     for i in range(0, len(pspikes)):
         if pspikes[i] == 0:
             invec[pspikes[i]] = invec[pspikes[i] + 1]
-        elif pspikes[i] == len(invec):
+        elif pspikes[i] == len(invec) - 1:
             invec[pspikes[i]] = invec[pspikes[i] - 1]
         else:
             invec[pspikes[i]] = (invec[pspikes[i] - 1] + invec[pspikes[i] + 1]) / 2.0
@@ -941,7 +942,7 @@ def despike(invec):
     for i in range(0, len(nspikes)):
         if nspikes[i] == 0:
             invec[nspikes[i]] = invec[nspikes[i] + 1]
-        elif pspikes[i] == len(invec):
+        elif pspikes[i] == len(invec) - 1:
             invec[nspikes[i]] = invec[nspikes[i] - 1]
         else:
             invec[nspikes[i]] = (invec[nspikes[i] - 1] + invec[nspikes[i] + 1]) / 2.0
