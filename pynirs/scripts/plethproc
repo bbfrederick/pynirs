@@ -93,50 +93,6 @@ def extractnumber(s):
         return 0.0
 
 
-##########################################################################################
-#
-# control flow starts here
-#
-##########################################################################################
-##########################################################################################
-
-# configurable parameters
-useFIR = False
-usebutterworthfilter = False
-cardplot = True
-lfoplot = True
-raw_plot = True
-numlines = 4
-nsegs = 1
-outnames = None
-vislambda = 660
-irlambda = 920
-sdspace = 1.0
-
-# set default variable values
-peakfilter = False
-dodisplay = True
-dolegend = True
-outsamplerate = 30.0
-doresample = True
-dontcombine = False
-debug = False
-directspec = False
-fileiscsv = False
-headernametype = "old"
-writeindividual = False
-starttime = 0.0
-theheartrate = 0.0
-despike = False
-waveletdespike = False
-waveletp = 0.05
-doMARA = False
-pMARA = 0.05
-filtorder = 3
-thepreprefilter = cbvf.noncausalfilter()
-thepreprefilter.setbutter(usebutterworthfilter, filtorder)
-
-
 # main event loop
 def usage():
     print(
@@ -213,6 +169,42 @@ def usage():
 
 
 def main():
+    # configurable parameters
+    useFIR = False
+    usebutterworthfilter = False
+    cardplot = True
+    lfoplot = True
+    raw_plot = True
+    numlines = 4
+    nsegs = 1
+    outnames = None
+    vislambda = 660
+    irlambda = 920
+    sdspace = 1.0
+
+    # set default variable values
+    peakfilter = False
+    dodisplay = True
+    dolegend = True
+    outsamplerate = 30.0
+    doresample = True
+    dontcombine = False
+    debug = False
+    directspec = False
+    fileiscsv = False
+    headernametype = "old"
+    writeindividual = False
+    starttime = 0.0
+    theheartrate = 0.0
+    despike = False
+    waveletdespike = False
+    waveletp = 0.05
+    doMARA = False
+    pMARA = 0.05
+    filtorder = 3
+    thepreprefilter = cbvf.noncausalfilter()
+    thepreprefilter.setbutter(usebutterworthfilter, filtorder)
+
     # get the command line parameters
     nargs = len(sys.argv)
     if nargs < 3:
