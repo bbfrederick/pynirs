@@ -549,7 +549,21 @@ def main():
     for i in range(0, len(tempcalibmarkers)):
         incalibmarkers[i] = extractnumber(tempcalibmarkers[i])
 
-    syncssexist = False
+    try:
+        tempaccx = thedata["ACC_X"].values[startpoint:endpoint]
+        tempaccy = thedata["ACC_Y"].values[startpoint:endpoint]
+        tempaccz = thedata["ACC_Z"].values[startpoint:endpoint]
+        inaccx = np.zeros(len(tempaccx))
+        inaccy = np.zeros(len(tempaccy))
+        inaccz = np.zeros(len(tempaccz))
+        for i in range(0, len(tempaccx))
+            inaccx[i] = extractnumber(tempaccx[i])
+            inaccy[i] = extractnumber(tempaccy[i])
+            inaccz[i] = extractnumber(tempaccz[i])
+        accexists = True
+    except KeyError:
+        accexists = False
+
     try:
         tempsyncmarkers = thedata["S"].values[startpoint:endpoint]
         insyncmarkers = np.zeros(len(tempsyncmarkers))
@@ -559,7 +573,6 @@ def main():
     except KeyError:
         syncsexist = False
 
-    externalssexist = False
     try:
         tempexternalmarkers = thedata["E"].values[startpoint:endpoint]
         inexternalmarkers = np.zeros(len(tempexternalmarkers))
@@ -569,7 +582,6 @@ def main():
     except KeyError:
         externalsexist = False
 
-    togglesexist = False
     try:
         temptogglemarkers = thedata["T"].values[startpoint:endpoint]
         intogglemarkers = np.zeros(len(temptogglemarkers))
@@ -668,6 +680,17 @@ def main():
         outcalibmarkers = np.zeros((len(outvisdata[0])), dtype="int")
         outexternalmarkers = np.zeros((len(outvisdata[0])), dtype="int")
         outsyncmarkers = np.zeros((len(outvisdata[0])), dtype="int")
+        outaccx = np.zeros((len(outvisdata[0])), dtype="float")
+        outaccy = np.zeros((len(outvisdata[0])), dtype="float")
+        outaccz = np.zeros((len(outvisdata[0])), dtype="float")
+        if accexists:
+            outaccx = cbvf.doresample(
+                    intimeaxis, inaccx, outtimeaxis, method="univariate")
+            outaccy = cbvf.doresample(
+                    intimeaxis, inaccy, outtimeaxis, method="univariate")
+            outaccz = cbvf.doresample(
+                    intimeaxis, inaccz, outtimeaxis, method="univariate")
+
         for i in range(0, len(togglemarkerlist)):
             if togglemarkerlist[i] >= starttime:
                 outtogglemarkers[
