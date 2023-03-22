@@ -479,6 +479,8 @@ therawdata: CircularList
 A lot is based off assumption that filter lengths are all <= maxdelay. All circular list lengths
 are determined under that assumption.
 """
+
+
 # NOA - have now specced physioFIRtime rather than len
 def rt_splitdata(therawdata, thetimepoint, thecardsq, fps, reinitphysioFIR=False):
     global physioFIRinited, cardbpfiltcoffs, respbpfiltcoffs, lfolpfiltcoffs, cardsmoothfiltcoffs
@@ -629,7 +631,6 @@ def MARA(
     padtime=10.0,
     debug=False,
 ):
-
     # step 0 - pad if necessary
     padlen = int(padtime * samplerate)
     if padlen > 0:
@@ -809,6 +810,9 @@ def wavelet_despike(
     if verbose:
         print("applying forward wavelet transform...")
 
+    if debug:
+        print(f"wavelet_despike: data length in is {len(data)}")
+
     # apply the wavelet tranform to each column (fNIRS channel)
     coeffs = pywt.wavedec(data, thewavelet, mode="periodic")
     if debug:
@@ -887,6 +891,9 @@ def wavelet_despike(
                 for i in denoised[j]:
                     FILE.writelines(str(i) + "\n")
     new_data = pywt.waverec(denoised, thewavelet, mode="periodic")
+
+    if debug:
+        print(f"wavelet_despike: data length out is {len(new_data)}")
 
     if verbose:
         print("done")
