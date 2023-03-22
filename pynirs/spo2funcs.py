@@ -890,7 +890,7 @@ def wavelet_despike(
             with open("denoised_" + str(j).zfill(2), "w") as FILE:
                 for i in denoised[j]:
                     FILE.writelines(str(i) + "\n")
-    new_data = pywt.waverec(denoised, thewavelet, mode="periodic")
+    new_data = pywt.waverec(denoised, thewavelet, mode="periodic")[0 : len(data)]
 
     if debug:
         print(f"wavelet_despike: data length out is {len(new_data)}")
