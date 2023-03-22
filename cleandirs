@@ -1,0 +1,17 @@
+#!/bin/bash
+
+rm -rf build dist pynirs.egg-info __pycache__ */__pycache__ */*/__pycache__
+
+pipresult="True"
+
+while [ -n "$pipresult" ]
+do
+    pipresult=`pip uninstall -y pynirs | grep "Found existing"`
+    if [[ -z $pipresult ]]
+    then
+        echo No installations found - quitting.
+        break
+    else
+        echo "$pipresult" - removing.
+    fi
+done
