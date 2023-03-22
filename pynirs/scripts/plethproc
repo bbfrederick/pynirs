@@ -556,7 +556,7 @@ def main():
         inaccx = np.zeros(len(tempaccx))
         inaccy = np.zeros(len(tempaccy))
         inaccz = np.zeros(len(tempaccz))
-        for i in range(0, len(tempaccx))
+        for i in range(0, len(tempaccx)):
             inaccx[i] = extractnumber(tempaccx[i])
             inaccy[i] = extractnumber(tempaccy[i])
             inaccz[i] = extractnumber(tempaccz[i])
@@ -685,11 +685,14 @@ def main():
         outaccz = np.zeros((len(outvisdata[0])), dtype="float")
         if accexists:
             outaccx = cbvf.doresample(
-                    intimeaxis, inaccx, outtimeaxis, method="univariate")
+                intimeaxis, inaccx, outtimeaxis, method="univariate"
+            )
             outaccy = cbvf.doresample(
-                    intimeaxis, inaccy, outtimeaxis, method="univariate")
+                intimeaxis, inaccy, outtimeaxis, method="univariate"
+            )
             outaccz = cbvf.doresample(
-                    intimeaxis, inaccz, outtimeaxis, method="univariate")
+                intimeaxis, inaccz, outtimeaxis, method="univariate"
+            )
 
         for i in range(0, len(togglemarkerlist)):
             if togglemarkerlist[i] >= starttime:
