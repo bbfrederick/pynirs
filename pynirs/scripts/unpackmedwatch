@@ -1,8 +1,11 @@
 #!/usr/bin/env python
-import pandas as pd
-import numpy as np
-import json
 import argparse
+import json
+import struct
+import sys
+
+import numpy as np
+import pandas as pd
 
 
 def _get_parser():
@@ -95,45 +98,8 @@ def writebidstsv(
             print("input data reshaped from", data.shape, "to", reshapeddata.shape)
     else:
         reshapeddata = data
-    if append:
-        insamplerate, instarttime, incolumns, indata, incompressed = readbidstsv(
-            outputfileroot + ".json", debug=debug
-        )
-        if debug:
-            print("appending")
-            print(insamplerate, instarttime, incolumns, indata, incompressed)
-        if insamplerate is None:
-            # file does not already exist
-            if debug:
-                print("creating file:", data.shape, columns, samplerate)
-            startcol = 0
-        else:
-            # file does already exist
-            if debug:
-                print(
-                    "appending:",
-                    insamplerate,
-                    instarttime,
-                    incolumns,
-                    indata.shape,
-                    reshapeddata.shape,
-                )
-            compressed = incompressed
-            if (
-                (insamplerate == samplerate)
-                and (instarttime == starttime)
-                and reshapeddata.shape[1] == indata.shape[1]
-            ):
-                startcol = len(incolumns)
-            else:
-                print("data dimensions not compatible with existing dimensions")
-                print(samplerate, insamplerate)
-                print(starttime, instarttime)
-                print(columns, incolumns)
-                print(indata.shape, reshapeddata.shape)
-                sys.exit()
-    else:
-        startcol = 0
+
+    startcol = 0
 
     if columns is None:
         columns = []
@@ -145,12 +111,8 @@ def writebidstsv(
                 f"number of column names ({len(columns)}) ",
                 f"does not match number of columns ({reshapeddata.shape[1]}) in data",
             )
-    if startcol > 0:
-        df = pd.DataFrame(data=np.transpose(indata), columns=incolumns)
-        for i in range(len(columns)):
-            df[columns[i]] = reshapeddata[i, :]
-    else:
-        df = pd.DataFrame(data=np.transpose(reshapeddata), columns=columns)
+
+    df = pd.DataFrame(data=np.transpose(reshapeddata), columns=columns)
     if compressed:
         df.to_csv(
             outputfileroot + ".tsv.gz",
@@ -171,10 +133,7 @@ def writebidstsv(
     headerdict["SamplingFrequency"] = samplerate
     headerdict["StartTime"] = starttime
     if colsinjson:
-        if startcol == 0:
-            headerdict["Columns"] = columns
-        else:
-            headerdict["Columns"] = incolumns + columns
+        headerdict["Columns"] = columns
 
     if not omitjson:
         with open(outputfileroot + ".json", "wb") as fp:
@@ -183,6 +142,20 @@ def writebidstsv(
                     headerdict, sort_keys=True, indent=4, separators=(",", ":")
                 ).encode("utf-8")
             )
+
+
+def unpackchar(theline, theoffset):
+    return struct.unpack("c", theline[theoffset : theoffset + 1])[0]
+
+
+def unpackshort(theline, theoffset):
+    return struct.unpack(">h", theline[theoffset : theoffset + 2])[0]
+
+
+def unpacklong(theline, theoffset):
+    unpackbuf = bytearray([0, 0, 0, 0])
+    unpackbuf[1:4] = theline[theoffset : theoffset + 3]
+    return struct.unpack(">l", unpackbuf)[0]
 
 
 def unpackline(theline):
@@ -195,28 +168,32 @@ def unpackline(theline):
     acceloffset = 20
     bpmoffset = 11
 
-    spo2 = theline[spo2offset]
+    spo2 = 1.0 * int(theline[spo2offset])
 
-    ecg_1 = 256.0 * theline[ecgoffset] + 1.0 * theline[ecgoffset + 1]
-    ecg_2 = 256.0 * theline[ecgoffset + 2] + 1.0 * theline[ecgoffset + 3]
-    ecg_3 = 256.0 * theline[ecgoffset + 4] + 1.0 * theline[ecgoffset + 5]
+    ecg_1 = 1.0 * unpackshort(theline, ecgoffset)
+    ecg_2 = 1.0 * unpackshort(theline, ecgoffset + 2)
+    ecg_3 = 1.0 * unpackshort(theline, ecgoffset + 4)
 
-    ir_raw = (
-        65536.0 * theline[ir_rawoffset]
-        + 256.0 * theline[ir_rawoffset + 1]
-        + 1.0 * theline[ir_rawoffset + 2]
-    )
-    red_raw = (
-        65536.0 * theline[red_rawoffset]
-        + 256.0 * theline[red_rawoffset + 1]
-        + 1.0 * theline[red_rawoffset + 2]
-    )
+    # ir_raw = (
+    #    65536.0 * theline[ir_rawoffset]
+    #    + 256.0 * theline[ir_rawoffset + 1]
+    #    + 1.0 * theline[ir_rawoffset + 2]
+    # )
+    # red_raw = (
+    #    65536.0 * theline[red_rawoffset]
+    #    + 256.0 * theline[red_rawoffset + 1]
+    #    + 1.0 * theline[red_rawoffset + 2]
+    # )
+    # ir_raw = 1.0 * unpacklong(theline, ir_rawoffset)
+    # red_raw = 1.0 * unpacklong(theline, red_rawoffset)
+    ir_raw = 1.0 * unpackshort(theline, ir_rawoffset + 1)
+    red_raw = 1.0 * unpackshort(theline, red_rawoffset + 1)
 
-    axx = 256.0 * theline[acceloffset] % 128 + 1.0 * theline[acceloffset + 1]
-    axy = 256.0 * theline[acceloffset + 2] % 128 + 1.0 * theline[acceloffset + 3]
-    axz = 256.0 * theline[acceloffset + 4] % 128 + 1.0 * theline[acceloffset + 5]
+    axx = 1.0 * unpackshort(theline, acceloffset)
+    axy = 1.0 * unpackshort(theline, acceloffset + 2)
+    axz = 1.0 * unpackshort(theline, acceloffset + 4)
 
-    bpm = 256.0 * theline[bpmoffset] + 1.0 * theline[bpmoffset + 1]
+    bpm = 1.0 * unpackshort(theline, bpmoffset)
 
     return id, [ir_raw, red_raw], [ecg_1, ecg_2, ecg_3], [axx, axy, axz], bpm, spo2
 
