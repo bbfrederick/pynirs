@@ -217,7 +217,7 @@ def main():
     # print("options:", sys.argv[2:])
     try:
         opts, args = getopt.gnu_getopt(
-            sys.argv, "o:X:m:MxPiAHcDVLRCF:f:dwp:s:e:S:n:l:N", ["help"]
+            sys.argv, "o:X:m:MxPiAHzcDVLRCF:f:dwp:s:e:S:n:l:N", ["help"]
         )
     except getopt.GetoptError as err:
         # print help information and exit:
@@ -351,6 +351,11 @@ def main():
             irlambda = 850  # NEW
             sdspace = 2.0  # NEW
             print("this is PLUX headband data")
+        elif o == "-z":  # NEW
+            vislambda = 660  # NEW
+            irlambda = 880  # NEW
+            sdspace = 1.0  # NEW
+            print("this is medwatch data")
         elif o == "-F":
             arbvec = a.split(",")
             if len(arbvec) != 2 and len(arbvec) != 4:
