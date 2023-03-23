@@ -2,7 +2,6 @@
 import argparse
 import json
 import struct
-import sys
 
 import numpy as np
 import pandas as pd
@@ -104,7 +103,7 @@ def writebidstsv(
     if columns is None:
         columns = []
         for i in range(reshapeddata.shape[0]):
-            columns.append(f"col_{(i + startcol).zfill(2)}")
+            columns.append(f"col_{str(i + startcol).zfill(2)}")
     else:
         if len(columns) != reshapeddata.shape[0]:
             raise ValueError(
@@ -307,6 +306,9 @@ def main():
             "Time",
             "CH1-IR",
             "CH1-VS",
+            "ACC_X",
+            "ACC_Y",
+            "ACC_Z",
             "TTL-IN",
             "TTL-OUT",
             "ADC1",
@@ -326,6 +328,10 @@ def main():
         )
         d["CH1-IR"] = np.asarray(sensordict["raw"], dtype=float)[:, 0]
         d["CH1-VS"] = np.asarray(sensordict["raw"], dtype=float)[:, 1]
+
+        d["ACC_X"] = np.asarray(sensordict["accel"], dtype=float)[:, 0]
+        d["ACC_Y"] = np.asarray(sensordict["accel"], dtype=float)[:, 1]
+        d["ACC_Z"] = np.asarray(sensordict["accel"], dtype=float)[:, 2]
 
         d["TTL-IN"] = np.zeros(numdatapoints, dtype=float)
         d["TTL-OUT"] = np.zeros(numdatapoints, dtype=float)

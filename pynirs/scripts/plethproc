@@ -5,22 +5,17 @@
 #       $Id: plethproc.py,v 1.13 2016/09/20 20:47:15 frederic Exp $
 #
 
-from __future__ import print_function
-
+import argparse
 import bisect
 import getopt
-import platform
 import sys
 
-import matplotlib
 import numpy as np
 import pandas as pd
 import pylab as P
 
 import pynirs.cbv_funcs as cbvf
 import pynirs.spo2funcs as spo2
-
-import argparse
 
 DEFAULT_SAMPLERATE = 33.0
 DEFAULT_SDSPACE = 1.0
@@ -552,9 +547,9 @@ def main():
             inaccx[i] = extractnumber(tempaccx[i])
             inaccy[i] = extractnumber(tempaccy[i])
             inaccz[i] = extractnumber(tempaccz[i])
-        accexists = True
+        accsexist = True
     except KeyError:
-        accexists = False
+        accsexist = False
 
     try:
         tempsyncmarkers = thedata["S"].values[startpoint:endpoint]
@@ -666,7 +661,6 @@ def main():
                     intimeaxis, invisdata[channum], outtimeaxis, method="univariate"
                 )
             )
-        outhbmarkers = np.zeros((len(outvisdata[0])), dtype="int")
         outbuttonmarkers = np.zeros((len(outvisdata[0])), dtype="int")
         outtogglemarkers = np.zeros((len(outvisdata[0])), dtype="int")
         outcalibmarkers = np.zeros((len(outvisdata[0])), dtype="int")
@@ -675,7 +669,7 @@ def main():
         outaccx = np.zeros((len(outvisdata[0])), dtype="float")
         outaccy = np.zeros((len(outvisdata[0])), dtype="float")
         outaccz = np.zeros((len(outvisdata[0])), dtype="float")
-        if accexists:
+        if accsexist:
             outaccx = cbvf.doresample(
                 intimeaxis, inaccx, outtimeaxis, method="univariate"
             )
@@ -713,24 +707,24 @@ def main():
                     outexternalmarkers[
                         int((externalmarkerlist[i] - starttime) / outsamplestep)
                     ] = 1
-    """
     else:
         for channum in range(0, len(thechans)):
             outirdata.append(inirdata[channum])
             outvisdata.append(invisdata[channum])
-        outmarkers = inbuttonmarkers
         outtimeaxis = intimeaxis
-        outhbmarkers = intimeaxis * 0
         outbuttonmarkers = inbuttonmarkers
         outcalibmarkers = incalibmarkers
+        if accsexist:
+            outaccx = inaccx
+            outaccy = inaccy
+            outaccz = inaccz
         if syncsexist:
             outsyncmarkers = insyncmarkers
         if externalsexist:
             outexternalmarkers = inexternalmarkers
         if togglesexist:
             outtogglemarkers = intogglemarkers
-        outcalibmarkers = incalibmarkers
-    """
+
     print("output data lengths", len(outtimeaxis), len(outvisdata[0]))
     if debug:
         outvec = np.zeros((2, len(intimeaxis)), dtype="float")
@@ -1218,6 +1212,13 @@ def main():
         cols.append(outnames[channum] + "_fftbpm")
         d[outnames[channum] + "_avgbpm"] = avgbpm[channum]
         cols.append(outnames[channum] + "_avgbpm")
+    if accsexist:
+        d["acc_x"] = outaccx
+        cols.append("acc_x")
+        d["acc_y"] = outaccy
+        cols.append("acc_y")
+        d["acc_z"] = outaccz
+        cols.append("acc_z")
     d["button"] = outbuttonmarkers
     cols.append("button")
     d["calibrate"] = outcalibmarkers
