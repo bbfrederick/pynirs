@@ -3,10 +3,16 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-.idea/
+.idea
 
 pynirs/data/coeffs*
 pynirs/data/denoised*
+pynirs/data/scalesize
+pynirs/data/sigma
+pynirs/data/median
+pynirs/data/initialvis.txt
+pynirs/data/resampledvis.txt
+
 
 # C extensions
 *.so
@@ -142,6 +148,9 @@ dmypy.json
 
 # Version stuff
 __gittag.py
+_gittag.py
+pynirs/_gittag.py
+pynirs/__gittag.py
 .git*
 
 # Pyre type checker
@@ -164,4 +173,6 @@ cython_debug/
 */*/.DS_Store
 
 pynirs/data/output
+.idea/inspectionProfiles/Project_Default.xml
 pynirs/_gittag.py
+*.xml
