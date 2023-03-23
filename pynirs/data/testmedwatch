@@ -20,7 +20,7 @@ unpackmedwatch \
     RAW_20230322_130009994.txt \
     output/UNPACK_20230322_130009994 \
     --samplerate 33.0 \
-    --plethfile output/Medwatch_ammleg_plethformat
+    --plethfile output/Medwatch_armleg_plethformat
 
 showtc \
     output/UNPACK_20230322_130009994_50.json \
@@ -30,3 +30,11 @@ showtc \
     output/UNPACK_20230322_130009994_51.json \
     --format separate
 
+plethproc \
+    output/Medwatch_armleg_plethformat_51.txt \
+    -o output/Sensor_51_armleg_waveletfilt \
+    -d \
+    -l 0 \
+    -w \
+    -i \
+    -S 33.0
