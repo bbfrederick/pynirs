@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import pandas as pd
-import os
+
 import matplotlib.cm as cm
 import sys
 import getopt
@@ -12,13 +12,12 @@ from statsmodels.robust import mad
 
 
 def usage():
-    print('checkfnirs')
-    print('usage:')
-    print('checkfnirs inputfilename')
+    print("checkfnirs")
+    print("usage:")
+    print("checkfnirs inputfilename")
 
 
 def main():
-
     # globals
     satthresh = 5.0
     perfusionindexwindow = 10.0
@@ -44,51 +43,59 @@ def main():
     df = pd.read_csv(infile)
     paramdict = {}
 
-    thetime = np.asarray(df['sample_times'])
+    thetime = np.asarray(df["sample_times"])
     thetime = thetime - thetime[0]
 
     # now run checks on the time axis
-    paramdict['timeaxis'] = {}
+    paramdict["timeaxis"] = {}
     timediffs = np.diff(thetime)
-    paramdict['timeaxis']['meandiff'] = np.mean(timediffs)
-    paramdict['timeaxis']['mediandiff'] = np.median(timediffs)
-    paramdict['timeaxis']['mindiff'] = np.min(timediffs)
-    paramdict['timeaxis']['maxdiff'] = np.max(timediffs)
+    paramdict["timeaxis"]["meandiff"] = np.mean(timediffs)
+    paramdict["timeaxis"]["mediandiff"] = np.median(timediffs)
+    paramdict["timeaxis"]["mindiff"] = np.min(timediffs)
+    paramdict["timeaxis"]["maxdiff"] = np.max(timediffs)
 
     # run time axis error checks
-    if paramdict['timeaxis']['mindiff'] < 0.0:
-        paramdict['timeaxis']['negativetimesteps'] = True
-        print('ERROR: negative time steps found in time axis - correcting')
+    if paramdict["timeaxis"]["mindiff"] < 0.0:
+        paramdict["timeaxis"]["negativetimesteps"] = True
+        print("ERROR: negative time steps found in time axis - correcting")
     else:
-        paramdict['timeaxis']['negativetimesteps'] = False
+        paramdict["timeaxis"]["negativetimesteps"] = False
 
-    if paramdict['timeaxis']['mindiff'] < 0.99 * paramdict['timeaxis']['mediandiff']:
-        paramdict['timeaxis']['shorttimesteps'] = True
-        print('ERROR: short time steps found in time axis - correcting')
+    if paramdict["timeaxis"]["mindiff"] < 0.99 * paramdict["timeaxis"]["mediandiff"]:
+        paramdict["timeaxis"]["shorttimesteps"] = True
+        print("ERROR: short time steps found in time axis - correcting")
     else:
-        paramdict['timeaxis']['shorttimesteps'] = False
+        paramdict["timeaxis"]["shorttimesteps"] = False
 
-    if paramdict['timeaxis']['maxdiff'] > 1.01 * paramdict['timeaxis']['mediandiff']:
-        paramdict['timeaxis']['longtimesteps'] = True
-        print('ERROR: long time steps found in time axis - correcting')
+    if paramdict["timeaxis"]["maxdiff"] > 1.01 * paramdict["timeaxis"]["mediandiff"]:
+        paramdict["timeaxis"]["longtimesteps"] = True
+        print("ERROR: long time steps found in time axis - correcting")
     else:
-        paramdict['timeaxis']['longtimesteps'] = False
+        paramdict["timeaxis"]["longtimesteps"] = False
 
-    #print(paramdict['timeaxis'])
+    # print(paramdict['timeaxis'])
 
     # fix the time axis if need be
-    timediffs = np.where(timediffs < paramdict['timeaxis']['mediandiff'] * 0.99, paramdict['timeaxis']['mediandiff'],
-                         timediffs)
-    timediffs = np.where(timediffs > paramdict['timeaxis']['mediandiff'] * 1.01, paramdict['timeaxis']['mediandiff'],
-                         timediffs)
+    timediffs = np.where(
+        timediffs < paramdict["timeaxis"]["mediandiff"] * 0.99,
+        paramdict["timeaxis"]["mediandiff"],
+        timediffs,
+    )
+    timediffs = np.where(
+        timediffs > paramdict["timeaxis"]["mediandiff"] * 1.01,
+        paramdict["timeaxis"]["mediandiff"],
+        timediffs,
+    )
     thetime[1:] = timediffs
     thetime = thetime.cumsum()
-    print('start time:', thetime[0])
-    print('end time:', thetime[-1])
-    paramdict['timeaxis']['samplerate'] = np.round(1.0 / paramdict['timeaxis']['mediandiff'], 2)
-    print('estimated sample rate:', paramdict['timeaxis']['samplerate'], 'Hz')
+    print("start time:", thetime[0])
+    print("end time:", thetime[-1])
+    paramdict["timeaxis"]["samplerate"] = np.round(
+        1.0 / paramdict["timeaxis"]["mediandiff"], 2
+    )
+    print("estimated sample rate:", paramdict["timeaxis"]["samplerate"], "Hz")
 
-    linelabels = ['IR_1', 'VS_1', 'IR_2', 'VS_2']
+    linelabels = ["IR_1", "VS_1", "IR_2", "VS_2"]
     rawdata = []
     for theline in linelabels:
         rawdata.append(df[theline])
@@ -104,90 +111,126 @@ def main():
         # check and correct for nans
         nanlist = rawdata[i].isna()
         if nanlist.any():
-            print('ERROR: NaNs or missing values found in', linelabels[i], '- correcting')
-            paramdict[linelabels[i]]['hasnans'] = True
+            print(
+                "ERROR: NaNs or missing values found in", linelabels[i], "- correcting"
+            )
+            paramdict[linelabels[i]]["hasnans"] = True
         else:
-            paramdict[linelabels[i]]['hasnans'] = False
+            paramdict[linelabels[i]]["hasnans"] = False
         rawdata[i] = np.nan_to_num(rawdata[i])
 
         # check and correct data range
-        paramdict[linelabels[i]]['min'] = np.min(rawdata[i])
-        if paramdict[linelabels[i]]['min'] < 0:
-            print('ERROR: Negative values found in', linelabels[i], '- correcting')
-            paramdict[linelabels[i]]['hasneg'] = True
+        paramdict[linelabels[i]]["min"] = np.min(rawdata[i])
+        if paramdict[linelabels[i]]["min"] < 0:
+            print("ERROR: Negative values found in", linelabels[i], "- correcting")
+            paramdict[linelabels[i]]["hasneg"] = True
         else:
-            paramdict[linelabels[i]]['hasneg'] = False
+            paramdict[linelabels[i]]["hasneg"] = False
         rawdata[i] = np.where(rawdata[i] < 0, 0, rawdata[i])
 
     # now run raw quality checks on the timecourses
     datais24bit = False
     for i in range(numvecs):
         # look for saturation
-        paramdict[linelabels[i]]['max'] = np.max(rawdata[i])
-        if paramdict[linelabels[i]]['max'] > 65535.0:
+        paramdict[linelabels[i]]["max"] = np.max(rawdata[i])
+        if paramdict[linelabels[i]]["max"] > 65535.0:
             datais24bit = True
-        nummax = np.sum(np.where(rawdata[i] == paramdict[linelabels[i]]['max'], 1, 0)[0])
-        paramdict[linelabels[i]]['maxpct'] = 100.0 * nummax / len(rawdata[i])
-        if paramdict[linelabels[i]]['maxpct'] > satthresh:
-            print('WARNING -', paramdict[linelabels[i]]['maxpct'],
-                  'of the values of', linelabels[i], 'are at maximum - channel may be saturated')
+        nummax = np.sum(
+            np.where(rawdata[i] == paramdict[linelabels[i]]["max"], 1, 0)[0]
+        )
+        paramdict[linelabels[i]]["maxpct"] = 100.0 * nummax / len(rawdata[i])
+        if paramdict[linelabels[i]]["maxpct"] > satthresh:
+            print(
+                "WARNING -",
+                paramdict[linelabels[i]]["maxpct"],
+                "of the values of",
+                linelabels[i],
+                "are at maximum - channel may be saturated",
+            )
 
         # check average value
-        paramdict[linelabels[i]]['mean'] = np.mean(rawdata[i])
-        paramdict[linelabels[i]]['median'] = np.median(rawdata[i])
-        paramdict[linelabels[i]]['MAD'] = mad(rawdata[i])
- 
-        print(linelabels[i],
-                'mean, median, MAD',
-                str(paramdict[linelabels[i]]['mean']),
-                str(paramdict[linelabels[i]]['median']),
-                str(paramdict[linelabels[i]]['MAD']))
-        print('\t',
-              str(np.round(100.0 * paramdict[linelabels[i]]['mean'] / 65535.0, 2)),
-              ',',
-              str(np.round(100.0 * paramdict[linelabels[i]]['median'] / 65535.0, 2)),
-              ', and',
-              str(np.round(100.0 * paramdict[linelabels[i]]['MAD'] / 65535.0, 2)),
-              'percent of',
-              str(65536),
-              '(16 bit)')
-        print('\t',
-              str(np.round(100.0 * paramdict[linelabels[i]]['mean'] / 16777215.0, 2)),
-              ',',
-              str(np.round(100.0 * paramdict[linelabels[i]]['median'] / 16777215.0, 2)),
-              ', and',
-              str(np.round(100.0 * paramdict[linelabels[i]]['MAD'] / 16777215.0, 2)),
-              'percent of',
-              str(16777215),
-              '(24 bit)')
+        paramdict[linelabels[i]]["mean"] = np.mean(rawdata[i])
+        paramdict[linelabels[i]]["median"] = np.median(rawdata[i])
+        paramdict[linelabels[i]]["MAD"] = mad(rawdata[i])
+
+        print(
+            linelabels[i],
+            "mean, median, MAD",
+            str(paramdict[linelabels[i]]["mean"]),
+            str(paramdict[linelabels[i]]["median"]),
+            str(paramdict[linelabels[i]]["MAD"]),
+        )
+        print(
+            "\t",
+            str(np.round(100.0 * paramdict[linelabels[i]]["mean"] / 65535.0, 2)),
+            ",",
+            str(np.round(100.0 * paramdict[linelabels[i]]["median"] / 65535.0, 2)),
+            ", and",
+            str(np.round(100.0 * paramdict[linelabels[i]]["MAD"] / 65535.0, 2)),
+            "percent of",
+            str(65536),
+            "(16 bit)",
+        )
+        print(
+            "\t",
+            str(np.round(100.0 * paramdict[linelabels[i]]["mean"] / 16777215.0, 2)),
+            ",",
+            str(np.round(100.0 * paramdict[linelabels[i]]["median"] / 16777215.0, 2)),
+            ", and",
+            str(np.round(100.0 * paramdict[linelabels[i]]["MAD"] / 16777215.0, 2)),
+            "percent of",
+            str(16777215),
+            "(24 bit)",
+        )
 
         # leave a space
         print()
 
     if datais24bit:
-        print('BIT DEPTH GOOD: data was definitely recorded in 24 bit')
+        print("BIT DEPTH GOOD: data was definitely recorded in 24 bit")
     else:
-        print('BIT DEPTH OR GAIN BAD: data was either not recorded in 24 bit mode or the gain is too low')
+        print(
+            "BIT DEPTH OR GAIN BAD: data was either not recorded in 24 bit mode or the gain is too low"
+        )
 
     # now do physiological quality checks on the timecourses
-    cardiacfilter = spo2.noncausalprefilter('cardiac')
+    cardiacfilter = spo2.noncausalprefilter("cardiac")
     filteredtc = []
     perfusionindex = []
     for i in range(numvecs):
         # filter the data to the cardiac band
         perfusionindex.append(rawdata[i] * 0.0)
-        filteredtc.append(np.nan_to_num(cardiacfilter.apply(paramdict['timeaxis']['samplerate'], np.nan_to_num(rawdata[i]))))
-        paramdict[linelabels[i]]['card_MAD'] = mad(filteredtc[i])
-        perfusionindexwindowpts = int(perfusionindexwindow * paramdict['timeaxis']['samplerate'])
-        perfusionindexwindowpts += (1 - perfusionindexwindow % 2)	# make the number odd
+        filteredtc.append(
+            np.nan_to_num(
+                cardiacfilter.apply(
+                    paramdict["timeaxis"]["samplerate"], np.nan_to_num(rawdata[i])
+                )
+            )
+        )
+        paramdict[linelabels[i]]["card_MAD"] = mad(filteredtc[i])
+        perfusionindexwindowpts = int(
+            perfusionindexwindow * paramdict["timeaxis"]["samplerate"]
+        )
+        perfusionindexwindowpts += 1 - perfusionindexwindow % 2  # make the number odd
         for j in range(len(rawdata[i])):
             startindex = np.max([0, j - np.int(perfusionindexwindowpts // 2)])
-            endindex = np.min([len(perfusionindex[i]) - 1, j + np.int(perfusionindexwindowpts // 2)])
-            cardsize = np.max(filteredtc[i][startindex:endindex]) - np.min(filteredtc[i][startindex:endindex])
-            perfusionindex[i][j] = 100.0 * np.nan_to_num(cardsize / np.mean(rawdata[i][startindex:endindex]))
-        paramdict[linelabels[i]]['perf_mean'] = np.mean(perfusionindex[i])
-        paramdict[linelabels[i]]['perf_median'] = np.median(perfusionindex[i])
-        print(linelabels[i], 'mean, median perfusion index', str(paramdict[linelabels[i]]['perf_mean']), str(paramdict[linelabels[i]]['perf_median']))
+            endindex = np.min(
+                [len(perfusionindex[i]) - 1, j + np.int(perfusionindexwindowpts // 2)]
+            )
+            cardsize = np.max(filteredtc[i][startindex:endindex]) - np.min(
+                filteredtc[i][startindex:endindex]
+            )
+            perfusionindex[i][j] = 100.0 * np.nan_to_num(
+                cardsize / np.mean(rawdata[i][startindex:endindex])
+            )
+        paramdict[linelabels[i]]["perf_mean"] = np.mean(perfusionindex[i])
+        paramdict[linelabels[i]]["perf_median"] = np.median(perfusionindex[i])
+        print(
+            linelabels[i],
+            "mean, median perfusion index",
+            str(paramdict[linelabels[i]]["perf_mean"]),
+            str(paramdict[linelabels[i]]["perf_median"]),
+        )
 
     print(paramdict)
 
@@ -195,7 +238,7 @@ def main():
     fig = figure()
     axlist = fig.subplots(numvecs, sharex=True, sharey=True)[:]
 
-    print('plotting raw data')
+    print("plotting raw data")
     for i in range(numvecs):
         thetc = np.nan_to_num(rawdata[i])
         themedian = np.median(thetc)
@@ -205,14 +248,14 @@ def main():
         ax.legend()
         ax.set_ylim([0.0, 1.5])
         if i == 0:
-            ax.set_title('Raw data')
+            ax.set_title("Raw data")
 
     show()
 
     fig = figure()
     axlist = fig.subplots(numvecs, sharex=True, sharey=True)[:]
 
-    print('plotting filtered data')
+    print("plotting filtered data")
     for i in range(numvecs):
         thetc = filteredtc[i]
         themedian = np.median(thetc)
@@ -220,16 +263,21 @@ def main():
         ax = axlist[i]
         ax.plot(thetime, rawdata[i], label=linelabels[i], color=colorlist[i])
         ax.legend()
-        ax.set_ylim([-3.0 * paramdict[linelabels[i]]['card_MAD'], 3.0 * paramdict[linelabels[i]]['card_MAD']])
+        ax.set_ylim(
+            [
+                -3.0 * paramdict[linelabels[i]]["card_MAD"],
+                3.0 * paramdict[linelabels[i]]["card_MAD"],
+            ]
+        )
         if i == 0:
-            ax.set_title('Cardiac filtered raw data')
+            ax.set_title("Cardiac filtered raw data")
 
     show()
 
     fig = figure()
     axlist = fig.subplots(numvecs, sharex=True, sharey=True)[:]
 
-    print('plotting perfusion index data')
+    print("plotting perfusion index data")
     for i in range(numvecs):
         thetc = perfusionindex[i]
         themedian = np.median(thetc)
@@ -239,15 +287,14 @@ def main():
         ax.legend()
         ax.set_ylim([0.0, 25.0])
         if i == 0:
-            ax.set_title('Perfusion index')
+            ax.set_title("Perfusion index")
 
     show()
 
-    print('done')
+    print("done")
 
     # amara = [np.nan_to_num(df['HbOamara_1']), np.nan_to_num(df['HbOamara_2'])]
 
 
-
-if __name__ == '__main__': 
-   main() 
+if __name__ == "__main__":
+    main()

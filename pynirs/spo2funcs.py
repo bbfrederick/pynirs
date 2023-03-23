@@ -4,8 +4,6 @@
 #       $Date: 2016/09/20 20:47:15 $
 #       $Id: spo2funcs.py,v 1.9 2016/09/20 20:47:15 frederic Exp $
 #
-from __future__ import print_function
-
 import bisect
 import os
 import sys
@@ -13,7 +11,6 @@ import sys
 import numpy as np
 import pandas as pd
 import pylab as plt
-
 # from numpy import NaN, Inf, arange, isscalar, asarray, array
 import pywt
 import rapidtide.filter as tide_filt
