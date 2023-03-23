@@ -1,0 +1,32 @@
+#!/bin/bash
+
+mkdir ./output
+
+unpackmedwatch \
+    RAW_20230322_125256988.txt \
+    output/UNPACK_20230322_125256988 \
+    --samplerate 33.0 \
+    --plethfile output/Medwatch_twoarm_plethformat
+
+showtc \
+    output/UNPACK_20230322_125256988_50.json \
+    --format separate
+
+showtc \
+    output/UNPACK_20230322_125256988_51.json \
+    --format separate
+
+unpackmedwatch \
+    RAW_20230322_130009994.txt \
+    output/UNPACK_20230322_130009994 \
+    --samplerate 33.0 \
+    --plethfile output/Medwatch_ammleg_plethformat
+
+showtc \
+    output/UNPACK_20230322_130009994_50.json \
+    --format separate
+
+showtc \
+    output/UNPACK_20230322_130009994_51.json \
+    --format separate
+
