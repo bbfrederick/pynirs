@@ -1,4 +1,3 @@
-
 # This file is originally generated from Git information by running 'setup.py
 # install'. Distribution tarballs contain a pre-generated copy of this file.
-__gittag__ = '31894ce-dirty'
+__gittag__ = "1f6c677-dirty"
