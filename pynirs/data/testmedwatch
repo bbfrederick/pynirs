@@ -31,10 +31,43 @@ showtc \
     --format separate
 
 plethproc \
+    output/Medwatch_twoarm_plethformat_50.txt \
+    -o output/Sensor_50_twoarm_waveletfilt \
+    -d \
+    -l 0 \
+    -w \
+    -z \
+    -i 
+
+plethproc \
+    output/Medwatch_twoarm_plethformat_51.txt \
+    -o output/Sensor_51_twoarm_waveletfilt \
+    -d \
+    -l 0 \
+    -w \
+    -z \
+    -i 
+
+plethproc \
+    output/Medwatch_armleg_plethformat_50.txt \
+    -o output/Sensor_50_armleg_waveletfilt \
+    -d \
+    -l 0 \
+    -w \
+    -z \
+    -i 
+
+plethproc \
     output/Medwatch_armleg_plethformat_51.txt \
     -o output/Sensor_51_armleg_waveletfilt \
     -d \
     -l 0 \
     -w \
-    -i \
-    -S 33.0
+    -z \
+    -i 
+
+rm coeffs*
+rm denoised*
+rm median
+rm sigma
+rm scalesize

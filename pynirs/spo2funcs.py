@@ -11,6 +11,7 @@ import sys
 import numpy as np
 import pandas as pd
 import pylab as plt
+
 # from numpy import NaN, Inf, arange, isscalar, asarray, array
 import pywt
 import rapidtide.filter as tide_filt
@@ -103,6 +104,11 @@ eHb["850"] = 0.7861  # HbO @ 850 - use for PluX headband
 dpf[
     "850"
 ] = 5.5  # 850 nm (estimated from "General equation for the differential pathlength factor of the frontal human head depending on wavelength and age" by Scholkmann)
+
+eHbO["880"] = 1.14  # HbO @ 880 - use for Medwatch
+eHb["880"] = 0.83  # HbO @ 880 - use for Medwatch
+dpf["880"] = 5.5  # DPF @ 880 - Medwatch
+
 
 eHbO["920"] = 1.3590  # HbO @ 920 - use for ADAPTER
 eHb["920"] = 0.8844  # HbO @ 920 - use for ADAPTER
