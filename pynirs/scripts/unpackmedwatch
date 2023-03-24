@@ -158,6 +158,26 @@ def unpacklongfrom24bits(theline, theoffset):
     return struct.unpack(">l", unpackbuf)[0]
 
 
+def unpack_uint24(theline, theoffset, debug=False):
+    """
+    Unpack a 24-bit unsigned integer from three bytes of data.
+
+    Args:
+        data (bytes): A bytes object containing three bytes of data.
+
+    Returns:
+        int: The unpacked 24-bit unsigned integer.
+    """
+    value = int.from_bytes(
+        theline[theoffset : theoffset + 3], byteorder="big", signed=False
+    )
+    if debug:
+        print(
+            f"{theline[theoffset]}, {theline[theoffset + 1]}, {theline[theoffset + 2]}: {value}, {value & 0xFFFFFF}"
+        )
+    return value & 0xFFFFFF
+
+
 def unpackline(theline):
     # theline consists of 27 bytes.  The first two bytes identify the device
     id = theline[0:2]
