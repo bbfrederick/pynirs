@@ -2,6 +2,7 @@
 import argparse
 import json
 import struct
+import sys
 
 import numpy as np
 import pandas as pd
@@ -179,14 +180,14 @@ def unpack_uint24(theline, theoffset, debug=False):
 
 
 def unpackline(theline):
-    # theline consists of 27 bytes.  The first two bytes identify the device
+    # theline consists of 28 bytes.  The first two bytes identify the device
     id = theline[0:2]
-    spo2offset = 13
-    ecgoffset = 3
-    ir_rawoffset = 14
-    red_rawoffset = 17
-    acceloffset = 20
-    bpmoffset = 11
+    ecgoffset = 4
+    bpmoffset = ecgoffset + 8  # 11 -> 12
+    spo2offset = bpmoffset + 2  # 13
+    ir_rawoffset = spo2offset + 1  # 14
+    red_rawoffset = ir_rawoffset + 3  # 17
+    acceloffset = red_rawoffset + 3  # 20
 
     spo2 = 1.0 * int(theline[spo2offset])
 
@@ -219,10 +220,30 @@ def main():
 
     numlines = int(len(df) / 27)
 
+    lastloc = 0
+    startlocs = []
+    markerlocs = []
+    for i in range(len(df)):
+        if df[i] == 35:
+            if i - lastloc == 28:
+                startlocs.append(i)
+                lastloc = i
+                markerlocs.append(0)
+            elif i - lastloc > 28:
+                print(i - lastloc)
+                startlocs.append(i)
+                markerlocs.append(lastloc)
+                lastloc = i
+                markerlocs.append(1)
+            else:
+                pass
+
+    sys.exit()
+
     # read the file in line by line
     alldata = {}
     numvalidlines = 0
-    for i in range(numlines):
+    for idx, i in enumerate(startlocs):
         startpos = i * 27
         id, raw, ecg, accel, bpm, spo2 = unpackline(df[startpos : startpos + 27])
         if id[0] != 35:
@@ -242,12 +263,14 @@ def main():
                 alldata[sensornum]["accel"] = []
                 alldata[sensornum]["spo2"] = []
                 alldata[sensornum]["bpm"] = []
+                alldata[sensornum]["marker"] = []
             alldata[sensornum]["fileline"].append(i)
             alldata[sensornum]["raw"].append(raw)
             alldata[sensornum]["ecg"].append(ecg)
             alldata[sensornum]["accel"].append(accel)
             alldata[sensornum]["spo2"].append(spo2)
             alldata[sensornum]["bpm"].append(bpm)
+            alldata[sensornum]["marker"].append(markerlocs[idx])
     print("data read complete")
 
     # Figure out the time that each line was recorded - find missing points
@@ -348,7 +371,7 @@ def main():
         d["ADC2"] = np.zeros(numdatapoints, dtype=float)
         d["DAC"] = np.zeros(numdatapoints, dtype=float)
         d["E"] = np.zeros(numdatapoints, dtype=float)
-        d["B"] = np.zeros(numdatapoints, dtype=float)
+        d["B"] = np.asarray(sensordict["marker"], dtype=float)
         d["T"] = np.zeros(numdatapoints, dtype=float)
         d["S"] = np.zeros(numdatapoints, dtype=float)
         d["C"] = np.zeros(numdatapoints, dtype=float)
