@@ -181,7 +181,7 @@ def unpack_uint24(theline, theoffset, debug=False):
 
 def unpackline(theline):
     # theline consists of 28 bytes.  The first two bytes identify the device
-    id = theline[0:2]
+    id = theline[0:3]
     ecgoffset = 4
     bpmoffset = ecgoffset + 8  # 11 -> 12
     spo2offset = bpmoffset + 2  # 13
@@ -250,7 +250,7 @@ def main():
             print("invalid packet")
         else:
             numvalidlines += 1
-            sensornum = str(id[1])
+            sensornum = str(id[2])
             try:
                 dummy = alldata[sensornum]
             except KeyError:
