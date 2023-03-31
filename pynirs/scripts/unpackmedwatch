@@ -45,6 +45,13 @@ def _get_parser():
         help=("Name of an optional output file in plethproc input format."),
         default=None,
     )
+    parser.add_argument(
+        "--debug",
+        dest="debug",
+        action="store_true",
+        help="Print additional internal information.",
+        default=False,
+    )
     return parser
 
 
@@ -154,7 +161,7 @@ def unpackshort(theline, theoffset):
 
 def unpacklongfrom24bits(theline, theoffset):
     # I think we need to set the high bit in the 4 byte word to be properly centered
-    unpackbuf = bytearray([128, 0, 0, 0])
+    unpackbuf = bytearray([0, 0, 0, 0])
     unpackbuf[1:4] = theline[theoffset : theoffset + 3]
     return struct.unpack(">l", unpackbuf)[0]
 
@@ -179,7 +186,7 @@ def unpack_uint24(theline, theoffset, debug=False):
     return value & 0xFFFFFF
 
 
-def unpackline(theline):
+def unpackline(theline, debug=False):
     # theline consists of 28 bytes.  The first two bytes identify the device
     id = theline[0:3]
     ecgoffset = 4
@@ -190,6 +197,8 @@ def unpackline(theline):
     acceloffset = red_rawoffset + 3  # 20
 
     spo2 = 1.0 * int(theline[spo2offset])
+    if debug:
+        print(spo2)
 
     ecg_1 = 1.0 * unpackshort(theline, ecgoffset)
     ecg_2 = 1.0 * unpackshort(theline, ecgoffset + 2)
@@ -238,19 +247,18 @@ def main():
             else:
                 pass
 
-    sys.exit()
-
     # read the file in line by line
     alldata = {}
     numvalidlines = 0
-    for idx, i in enumerate(startlocs):
-        startpos = i * 27
-        id, raw, ecg, accel, bpm, spo2 = unpackline(df[startpos : startpos + 27])
+    for idx, startpos in enumerate(startlocs):
+        id, raw, ecg, accel, bpm, spo2 = unpackline(df[startpos : startpos + 28], debug=args.debug)
+        if args.debug:
+            print(startpos, id[0], id[1], id[2])
         if id[0] != 35:
             print("invalid packet")
         else:
             numvalidlines += 1
-            sensornum = str(id[2])
+            sensornum = str(id[1])
             try:
                 dummy = alldata[sensornum]
             except KeyError:
@@ -271,6 +279,7 @@ def main():
             alldata[sensornum]["spo2"].append(spo2)
             alldata[sensornum]["bpm"].append(bpm)
             alldata[sensornum]["marker"].append(markerlocs[idx])
+
     print("data read complete")
 
     # Figure out the time that each line was recorded - find missing points
@@ -354,10 +363,8 @@ def main():
         ]
         numdatapoints = len(sensordict["raw"])
         print(f"sensor {sensornum} has {numdatapoints} items")
-        d["Time"] = (
-            np.linspace(0, numdatapoints, numdatapoints, endpoint=False)
-            / args.samplerate
-        )
+        timeaxis = np.linspace(0, numdatapoints, numdatapoints, endpoint=False) / args.samplerate
+        d["Time"] = timeaxis
         d["CH1-IR"] = np.asarray(sensordict["raw"], dtype=float)[:, 0]
         d["CH1-VS"] = np.asarray(sensordict["raw"], dtype=float)[:, 1]
 
@@ -371,10 +378,12 @@ def main():
         d["ADC2"] = np.zeros(numdatapoints, dtype=float)
         d["DAC"] = np.zeros(numdatapoints, dtype=float)
         d["E"] = np.zeros(numdatapoints, dtype=float)
-        d["B"] = np.asarray(sensordict["marker"], dtype=float)
+        markerarray= np.asarray(sensordict["marker"], dtype=float)
+        d["B"] = markerarray
         d["T"] = np.zeros(numdatapoints, dtype=float)
         d["S"] = np.zeros(numdatapoints, dtype=float)
         d["C"] = np.zeros(numdatapoints, dtype=float)
+        print(f"Sensor {sensornum} has markers at {timeaxis[np.where(markerarray == 1)]}")
 
         df = pd.DataFrame(data=d)
         df = df[cols]
