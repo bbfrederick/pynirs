@@ -323,8 +323,9 @@ def main():
     # check for serial number errors
     for sensornum, sensordict in alldata.items():
         for i in range(1, len(sensordict["sernum"])):
-            if (sensordict["sernum"][i] - sensordict["sernum"][i -1]) %254 != 1:
+            if (sensordict["sernum"][i] - sensordict["sernum"][i - 1] + 255) % 255 != 1:
                 print(f"serial number anomaly in sensor {sensornum} at timepoint {i}")
+                print(f"\t{sensordict['sernum'][i]} does not follow {sensordict['sernum'][i -1]}")
 
 
     colnames = [
