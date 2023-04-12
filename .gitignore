@@ -15,6 +15,10 @@ pynirs/data/initialvis.txt
 pynirs/data/resampledvis.txt
 
 
+.DS_Store
+*/.DS_Store
+*/*/.DS_Store
+
 # C extensions
 *.so
 
@@ -162,8 +166,3 @@ pynirs/__gittag.py
 
 # Cython debug symbols
 cython_debug/
-
-.DS_Store
-*/.DS_Store
-*/*/.DS_Store
-
