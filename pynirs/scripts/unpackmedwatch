@@ -188,7 +188,10 @@ def unpack_uint24(theline, theoffset, debug=False):
 
 def unpackline(theline, debug=False):
     # theline consists of 29 bytes.  The first two bytes identify the device
-    id = theline[0:4]
+    startcharoffset = 0
+    sernumoffset = startcharoffset + 1
+    idoffset = sernumoffset + 1
+    mkroffset = idoffset + 1
     ecgoffset = 5
     bpmoffset = ecgoffset + 8  # 11 -> 12
     spo2offset = bpmoffset + 2  # 13
@@ -196,9 +199,12 @@ def unpackline(theline, debug=False):
     red_rawoffset = ir_rawoffset + 3  # 17
     acceloffset = red_rawoffset + 3  # 20
 
+    startchar = int(theline[startcharoffset])
+    sensor = int(theline[idoffset])
+    mkr = int(theline[mkroffset])
+    sernum = int(theline[sernumoffset]) - 1
+
     spo2 = 1.0 * int(theline[spo2offset])
-    if debug:
-        print(spo2)
 
     ecg_1 = 1.0 * unpackshort(theline, ecgoffset)
     ecg_2 = 1.0 * unpackshort(theline, ecgoffset + 2)
@@ -212,8 +218,10 @@ def unpackline(theline, debug=False):
     axz = 1.0 * unpackshort(theline, acceloffset + 4)
 
     bpm = 1.0 * unpackshort(theline, bpmoffset)
+    if debug:
+        print(bpm)
 
-    return id, sernum, [ir_raw, red_raw], [ecg_1, ecg_2, ecg_3], [axx, axy, axz], bpm, spo2
+    return startchar, sensor, mkr, sernum, [ir_raw, red_raw], [ecg_1, ecg_2, ecg_3], [axx, axy, axz], bpm, spo2
 
 
 def main():
@@ -235,10 +243,14 @@ def main():
     for i in range(len(df)):
         if df[i] == 35:
             if i - lastloc == PACKETLEN:
+                if args.debug:
+                    print("normal packet")
                 startlocs.append(i)
                 lastloc = i
                 markerlocs.append(0)
             elif i - lastloc > PACKETLEN:
+                if args.debug:
+                    print("marker packet")
                 print(i - lastloc)
                 startlocs.append(i)
                 markerlocs.append(lastloc)
@@ -251,22 +263,23 @@ def main():
     alldata = {}
     numvalidlines = 0
     for idx, startpos in enumerate(startlocs):
-        id, sernum, raw, ecg, accel, bpm, spo2 = unpackline(df[startpos : startpos + PACKETLEN], debug=args.debug)
+        startchar, sensor, mkr, sernum, raw, ecg, accel, bpm, spo2 = unpackline(df[startpos : startpos + PACKETLEN], debug=args.debug)
         if args.debug:
-            print(startpos, id[0], id[1], id[2])
-        if id[0] != 35:
+            print(startpos, startchar, sensor, mkr, sernum)
+        if startchar != 35:
             print("invalid packet")
         else:
             numvalidlines += 1
-            sensornum = str(id[1])
+            sensornum = str(sensor)
             try:
                 dummy = alldata[sensornum]
             except KeyError:
-                print(f"initializing {sensornum} {id[1]}")
+                print(f"initializing {sensornum} {sensor}")
                 alldata[sensornum] = {}
                 alldata[sensornum]["sensornum"] = sensornum
                 alldata[sensornum]["fileline"] = []
                 alldata[sensornum]["sernum"] = []
+                alldata[sensornum]["mkr"] = []
                 alldata[sensornum]["raw"] = []
                 alldata[sensornum]["ecg"] = []
                 alldata[sensornum]["accel"] = []
@@ -275,6 +288,7 @@ def main():
                 alldata[sensornum]["marker"] = []
             alldata[sensornum]["fileline"].append(i)
             alldata[sensornum]["sernum"].append(sernum)
+            alldata[sensornum]["mkr"].append(mkr)
             alldata[sensornum]["raw"].append(raw)
             alldata[sensornum]["ecg"].append(ecg)
             alldata[sensornum]["accel"].append(accel)
@@ -306,9 +320,17 @@ def main():
         f"sensor with most points is {maxsensor} with length {maxlen}.  Number of sensors is {numsensors}"
     )
 
+    # check for serial number errors
+    for sensornum, sensordict in alldata.items():
+        for i in range(1, len(sensordict["sernum"])):
+            if (sensordict["sernum"][i] - sensordict["sernum"][i -1]) %254 != 1:
+                print(f"serial number anomaly in sensor {sensornum} at timepoint {i}")
+
+
     colnames = [
         "time",
         "sernum",
+        "mkr",
         "irraw,",
         "redraw",
         "ecg1",
@@ -323,7 +345,7 @@ def main():
     for sensornum, sensordict in alldata.items():
         numdatapoints = len(sensordict["raw"])
         print(f"sensor {sensornum} has {numdatapoints} items")
-        outputdata = np.zeros((numdatapoints, 12), dtype=float)
+        outputdata = np.zeros((numdatapoints, 13), dtype=float)
         colloc = 0
         colsz = 1
         outputdata[:, colloc] = (
@@ -333,6 +355,9 @@ def main():
         colloc += colsz
         colsz = 1
         outputdata[:, colloc] = np.asarray(sensordict["sernum"], dtype=int)
+        colloc += colsz
+        colsz = 1
+        outputdata[:, colloc] = np.asarray(sensordict["mkr"], dtype=int)
         colloc += colsz
         colsz = 2
         outputdata[:, colloc:colloc + colsz] = np.asarray(sensordict["raw"], dtype=float)
