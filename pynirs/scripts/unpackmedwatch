@@ -332,7 +332,7 @@ def main():
         "time",
         "sernum",
         "mkr",
-        "irraw,",
+        "irraw",
         "redraw",
         "ecg1",
         "ecg2",
