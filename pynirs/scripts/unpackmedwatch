@@ -277,7 +277,7 @@ def main():
                 alldata[sensornum] = {}
                 alldata[sensornum]["sensornum"] = sensornum
                 alldata[sensornum]["fileline"] = []
-                alldata[sensornum]["serialnum"] = serialnum
+                alldata[sensornum]["sernum"] = sernum
                 alldata[sensornum]["raw"] = []
                 alldata[sensornum]["ecg"] = []
                 alldata[sensornum]["accel"] = []
