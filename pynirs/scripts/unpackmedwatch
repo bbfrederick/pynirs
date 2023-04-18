@@ -2,7 +2,6 @@
 import argparse
 import json
 import struct
-import sys
 
 import numpy as np
 import pandas as pd
@@ -278,8 +277,7 @@ def main():
                 alldata[sensornum] = {}
                 alldata[sensornum]["sensornum"] = sensornum
                 alldata[sensornum]["fileline"] = []
-                alldata[sensornum]["sernum"] = []
-                alldata[sensornum]["mkr"] = []
+                alldata[sensornum]["serialnum"] = serialnum
                 alldata[sensornum]["raw"] = []
                 alldata[sensornum]["ecg"] = []
                 alldata[sensornum]["accel"] = []
@@ -407,7 +405,10 @@ def main():
         ]
         numdatapoints = len(sensordict["raw"])
         print(f"sensor {sensornum} has {numdatapoints} items")
-        timeaxis = np.linspace(0, numdatapoints, numdatapoints, endpoint=False) / args.samplerate
+        timeaxis = (
+            np.linspace(0, numdatapoints, numdatapoints, endpoint=False)
+            / args.samplerate
+        )
         d["Time"] = timeaxis
         d["CH1-IR"] = np.asarray(sensordict["raw"], dtype=float)[:, 0]
         d["CH1-VS"] = np.asarray(sensordict["raw"], dtype=float)[:, 1]
@@ -422,12 +423,14 @@ def main():
         d["ADC2"] = np.zeros(numdatapoints, dtype=float)
         d["DAC"] = np.zeros(numdatapoints, dtype=float)
         d["E"] = np.zeros(numdatapoints, dtype=float)
-        markerarray= np.asarray(sensordict["marker"], dtype=float)
+        markerarray = np.asarray(sensordict["marker"], dtype=float)
         d["B"] = markerarray
         d["T"] = np.zeros(numdatapoints, dtype=float)
         d["S"] = np.zeros(numdatapoints, dtype=float)
         d["C"] = np.zeros(numdatapoints, dtype=float)
-        print(f"Sensor {sensornum} has markers at {timeaxis[np.where(markerarray == 1)]}")
+        print(
+            f"Sensor {sensornum} has markers at {timeaxis[np.where(markerarray == 1)]}"
+        )
 
         df = pd.DataFrame(data=d)
         df = df[cols]
