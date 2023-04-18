@@ -11,8 +11,6 @@ import sys
 import numpy as np
 import pandas as pd
 import pylab as plt
-
-# from numpy import NaN, Inf, arange, isscalar, asarray, array
 import pywt
 import rapidtide.filter as tide_filt
 from scipy import integrate, interpolate

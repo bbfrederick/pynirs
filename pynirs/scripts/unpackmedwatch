@@ -220,7 +220,17 @@ def unpackline(theline, debug=False):
     if debug:
         print(bpm)
 
-    return startchar, sensor, mkr, sernum, [ir_raw, red_raw], [ecg_1, ecg_2, ecg_3], [axx, axy, axz], bpm, spo2
+    return (
+        startchar,
+        sensor,
+        mkr,
+        sernum,
+        [ir_raw, red_raw],
+        [ecg_1, ecg_2, ecg_3],
+        [axx, axy, axz],
+        bpm,
+        spo2,
+    )
 
 
 def main():
@@ -262,7 +272,9 @@ def main():
     alldata = {}
     numvalidlines = 0
     for idx, startpos in enumerate(startlocs):
-        startchar, sensor, mkr, sernum, raw, ecg, accel, bpm, spo2 = unpackline(df[startpos : startpos + PACKETLEN], debug=args.debug)
+        startchar, sensor, mkr, sernum, raw, ecg, accel, bpm, spo2 = unpackline(
+            df[startpos : startpos + PACKETLEN], debug=args.debug
+        )
         if args.debug:
             print(startpos, startchar, sensor, mkr, sernum)
         if startchar != 35:
@@ -324,8 +336,9 @@ def main():
         for i in range(1, len(sensordict["sernum"])):
             if (sensordict["sernum"][i] - sensordict["sernum"][i - 1] + 255) % 255 != 1:
                 print(f"serial number anomaly in sensor {sensornum} at timepoint {i}")
-                print(f"\t{sensordict['sernum'][i]} does not follow {sensordict['sernum'][i -1]}")
-
+                print(
+                    f"\t{sensordict['sernum'][i]} does not follow {sensordict['sernum'][i -1]}"
+                )
 
     colnames = [
         "time",
@@ -360,13 +373,19 @@ def main():
         outputdata[:, colloc] = np.asarray(sensordict["mkr"], dtype=int)
         colloc += colsz
         colsz = 2
-        outputdata[:, colloc:colloc + colsz] = np.asarray(sensordict["raw"], dtype=float)
+        outputdata[:, colloc : colloc + colsz] = np.asarray(
+            sensordict["raw"], dtype=float
+        )
         colloc += colsz
         colsz = 3
-        outputdata[:, colloc:colloc + colsz] = np.asarray(sensordict["ecg"], dtype=float)
+        outputdata[:, colloc : colloc + colsz] = np.asarray(
+            sensordict["ecg"], dtype=float
+        )
         colloc += colsz
         colsz = 3
-        outputdata[:, colloc:colloc + colsz] = np.asarray(sensordict["accel"], dtype=float)
+        outputdata[:, colloc : colloc + colsz] = np.asarray(
+            sensordict["accel"], dtype=float
+        )
         colloc += colsz
         colsz = 1
         outputdata[:, colloc] = np.asarray(sensordict["spo2"], dtype=float)
