@@ -15,6 +15,10 @@ pynirs/data/initialvis.txt
 pynirs/data/resampledvis.txt
 
 
+.DS_Store
+*/.DS_Store
+*/*/.DS_Store
+
 # C extensions
 *.so
 
@@ -166,4 +170,4 @@ cython_debug/
 .DS_Store
 */.DS_Store
 */*/.DS_Store
-
+.idea
