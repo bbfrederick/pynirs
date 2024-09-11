@@ -99,9 +99,9 @@ eHb["830"] = 0.7804
 eHbO["850"] = 1.1596  # HbO @ 850 - use for PluX headband
 eHb["850"] = 0.7861  # HbO @ 850 - use for PluX headband
 # sdspace = 2.0  		# source detector spacing - PluX headband
-dpf[
-    "850"
-] = 5.5  # 850 nm (estimated from "General equation for the differential pathlength factor of the frontal human head depending on wavelength and age" by Scholkmann)
+dpf["850"] = (
+    5.5  # 850 nm (estimated from "General equation for the differential pathlength factor of the frontal human head depending on wavelength and age" by Scholkmann)
+)
 
 eHbO["880"] = 1.14  # HbO @ 880 - use for Medwatch
 eHb["880"] = 0.83  # HbO @ 880 - use for Medwatch
@@ -110,16 +110,16 @@ dpf["880"] = 5.5  # DPF @ 880 - Medwatch
 
 eHbO["920"] = 1.3590  # HbO @ 920 - use for ADAPTER
 eHb["920"] = 0.8844  # HbO @ 920 - use for ADAPTER
-dpf[
-    "920"
-] = 5.5  # 850 nm (estimated from "General equation for the differential pathlength factor of the frontal human head depending on wavelength and age")
+dpf["920"] = (
+    5.5  # 850 nm (estimated from "General equation for the differential pathlength factor of the frontal human head depending on wavelength and age")
+)
 
 eHbO["950"] = 1.3374  # HbO @ 950 - use for PluX armband
 eHb["950"] = 0.7068  # HbO @ 950 - use for PluX armband
 # sdspace = 2.83 		# source detector spacing - PluX armband
-dpf[
-    "950"
-] = 5.5  # 950 nm (estimated from the 850 number, and the fact that normalized OD is about the same at 850 and 950
+dpf["950"] = (
+    5.5  # 950 nm (estimated from the 850 number, and the fact that normalized OD is about the same at 850 and 950
+)
 # according to "Determination of the wavelength dependence of the differential pathlength factor from near-infrared pulse signals." by Kohl")
 
 # simulation parameters

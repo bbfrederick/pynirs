@@ -4,16 +4,16 @@
 # $Date: 2016/03/18 18:54:44 $
 # $Id: cbv_funcs.py,v 1.1.1.1 2016/03/18 18:54:44 frederic Exp $
 #
-from __future__ import print_function, division
+from __future__ import division, print_function
+
+import bisect
+import sys
+import time
+import warnings
 
 import numpy as np
-import scipy as sp
 import pylab as pl
-import warnings
-import time
-import sys
-import bisect
-
+import scipy as sp
 from scipy import signal
 
 # from memory_profiler import profile
@@ -43,6 +43,7 @@ def conditionaljit():
 
 
 # ---------------------------------------- Global constants -------------------------------------------
+
 
 # ---------------------------------------- Debugging/profiling functions ------------------------------
 # @profile(precision=4)

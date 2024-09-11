@@ -5,23 +5,25 @@
 #       $Id: spo2funcs.py,v 1.9 2016/09/20 20:47:15 frederic Exp $
 #
 from __future__ import print_function
+
+import binascii
+import bisect
 import os
 import string
+import sys
 import time
+
 # import matplotlib
 import numpy as np
-import binascii
-from scipy.signal import cspline1d, cspline1d_eval, butter, lfilter, firwin
-from scipy import fftpack, argmax, interpolate
-from scipy.optimize import leastsq
-import pylab as plt
-import bisect
-import sys
 import pandas as pd
+import pylab as plt
 # from numpy import NaN, Inf, arange, isscalar, asarray, array
 import pywt
-from statsmodels.robust import mad
+from scipy import argmax, fftpack, interpolate
+from scipy.optimize import leastsq
+from scipy.signal import butter, cspline1d, cspline1d_eval, firwin, lfilter
 from scipy.special import erfinv
+from statsmodels.robust import mad
 
 
 def dependencies_for_hemofuncs():
