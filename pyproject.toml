@@ -1,0 +1,127 @@
+[build-system]
+requires = ["setuptools>=42", "cffi>=1.0.0", 'versioneer[toml]']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = 'pynirs'
+description = 'Tools for performing correlation analysis on fMRI data.'
+keywords = ["fMRI", "correlation", "RIPTiDe", "noise"]
+license = {text = "Apache Software License"}
+readme = 'README.rst'
+classifiers = [
+    'Operating System :: OS Independent',
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: Science/Research',
+    'Topic :: Scientific/Engineering :: Image Recognition',
+    'License :: OSI Approved :: Apache Software License',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+]
+requires-python = '>=3.9'
+dependencies = [
+    'numpy',
+    'scipy',
+    'pandas',
+    'scikit-learn',
+    'matplotlib',
+    'statsmodels',
+]
+#dynamic = ['version', 'license', 'keywords']
+dynamic = ['version']
+authors = [
+    {name = "Blaise deB Frederick", email='blaise.frederick@gmail.com' },
+    {name = "Taylor Salo"},
+    {name = "Daniel M. Drucker, Ph.D."},
+    {name = "Jeffrey N Stout"},
+]
+
+[project.urls]
+'Homepage' = 'https://github.com/bbfrederick/pynirs'
+'Bug Tracker' = 'https://github.com/bbfrederick/pynirs/issues'
+'Repository' = 'https://github.com/bbfrederick/pynirs.git'
+'Documentation' = 'https://pynirs.readthedocs.io'
+'Changelog' = 'https://github.com/bbfrederick/pynirs/blob/main/CHANGELOG.md'
+
+[project.optional-dependencies]
+test = [
+  'codecov',
+  'coverage',
+  'coveralls',
+  'flake8-black',
+  'pytest',
+  'pytest-cov',
+]
+doc = [
+  'sphinx',
+  'sphinx_rtd_theme',
+  'sphinx-argparse',
+  'sphinx-gallery',
+  'm2r',
+  'numpydoc',
+  'recommonmark',
+  'mistune',
+]
+
+#[project.scripts]
+#pynirs = 'pynirs.scripts.pynirs:entrypoint'
+#tidepool = 'pynirs.scripts.tidepool:entrypoint'
+#calcicc = 'pynirs.scripts.calcicc:main'
+
+[tool.setuptools]
+include-package-data = true 
+
+[tool.setuptools.packages.find]
+include = ['pynirs']
+
+[tool.setuptools.package-data]
+pynirs = ['pynirs/*.py', 'pynirs/scripts/*']
+
+[tool.setuptools.dynamic]
+version = {attr = "pynirs.__version__"}
+
+[tool.setuptools.exclude-package-data]
+pynirs = ['.eggs', '.git', '.github', '.pytest_cache', 'test']
+
+# Aliases
+docs = ['pynirs[doc]']
+tests = ['pynirs[test]']
+all = ['pynirs[docs,tests]']
+
+[tool.black]
+line-length = 99
+target-version = ['py39']
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.github
+    | \.hg
+    | \.pytest_cache
+    | _build
+    | build
+    | dist
+  )/
+  | get_version.py
+  | versioneer.py
+  | pynirs/_version.py
+  | pynirs/candidatetests
+  | pynirs/disabledtests
+  | pynirs/data/examples
+)
+'''
+
+[tool.isort]
+profile = 'black'
+multi_line_output = 3
+
+[tool.versioneer]
+VCS = 'git'
+style = 'pep440'
+versionfile_source = 'pynirs/_version.py'
+versionfile_build = 'pynirs/_version.py'
+tag_prefix = 'v'
+parentdir_prefix = 'pynirs-'

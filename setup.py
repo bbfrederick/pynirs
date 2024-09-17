@@ -5,21 +5,14 @@ https://packaging.python.org/en/latest/distributing.html
 https://github.com/pypa/sampleproject
 """
 
-import re
-import subprocess
-import sys
 # To use a consistent encoding
 from codecs import open
 from os import path
 
 # Always prefer setuptools over distutils
-from setuptools import find_packages, setup
+from setuptools import find_namespace_packages, find_packages, setup
 
-GITTAG_PY = """
-# This file is originally generated from Git information by running 'setup.py
-# install'. Distribution tarballs contain a pre-generated copy of this file.
-__gittag__ = '%s'
-"""
+import versioneer
 
 here = path.abspath(path.dirname(__file__))
 
@@ -27,7 +20,16 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
-modules_list = ["pynirs/cbv_funcs", "pynirs/spo2funcs"]
+
+# Write version number out to VERSION file
+version = versioneer.get_version()
+try:
+    with open(path.join(here, "VERSION"), "w", encoding="utf-8") as f:
+        f.write(version)
+except PermissionError:
+    print("can't write to VERSION file - moving on")
+
+modules_list = ["pynirs/bidsio", "pynirs/cbv_funcs", "pynirs/spo2funcs"]
 
 script_list = [
     "pynirs/scripts/plethproc",
@@ -37,44 +39,13 @@ script_list = [
 ]
 
 
-def update_gittag_py():
-    if not path.isdir(".git"):
-        print("This does not appear to be a Git repository.")
-        f = open("pynirs/_gittag.py", "w")
-        f.write(GITTAG_PY % "UNKNOWN-UNKNOWN")
-        f.close()
-        return
-    try:
-        p = subprocess.Popen(
-            ["git", "describe", "--tags", "--dirty", "--always"], stdout=subprocess.PIPE
-        )
-    except EnvironmentError:
-        print("unable to run git, leaving pynirs/_gittag.py alone")
-        return
-    stdout = p.communicate()[0]
-    if p.returncode != 0:
-        print("unable to run git, leaving pynirs/_gittag.py alone")
-        return
-    # we use tags like "python-pynirs-0.5", so strip the prefix
-    if sys.version_info[0] == 3:
-        ver = str(stdout.strip(), "utf-8")
-    else:
-        ver = stdout.strip()
-    print(ver)
-    f = open("pynirs/_gittag.py", "w")
-    f.write(GITTAG_PY % ver)
-    f.close()
-
-
-update_gittag_py()
-
-
 setup(
     name="pynirs",
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version="0.0.1",
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description="Tools for performing correlation analysis on fMRI data.",
     long_description=long_description,
     # The project's main homepage.
@@ -98,19 +69,22 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.3",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     # What does your project relate to?
     keywords=["fMRI", "correlation", "RIPTiDe", "noise"],
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=find_packages(exclude=["contrib", "docs", "tests"]),
+    packages=find_namespace_packages(
+        exclude=[
+            "contrib",
+            "docs",
+        ]
+    ),
     # packages=['pynirs'],
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:

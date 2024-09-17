@@ -1,0 +1,7 @@
+include VERSION
+include *.md *.rst 
+include pynirs/*.py
+include pynirs/scripts/*
+recursive-include pynirs/tests *
+include versioneer.py
+include pynirs/_version.py
