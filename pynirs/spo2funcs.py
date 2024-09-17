@@ -172,9 +172,7 @@ def design_card_filter(Fs, n, cardratelow=40.0, cardratehigh=120.0, numharmonics
     cardtimelow = 60.0 / cardratelow
     cardtimehigh = 60.0 / cardratehigh
     cardfreqlow = 1.0 / cardtimelow
-    cardfreqhigh = (
-        1.0 * numharmonics
-    ) / cardtimehigh  # allow for first and second harmonics
+    cardfreqhigh = (1.0 * numharmonics) / cardtimehigh  # allow for first and second harmonics
     print("cardiac filter range:", cardfreqlow, " to ", cardfreqhigh, " Hz")
     Fcl = cardfreqlow
     Fch = cardfreqhigh
@@ -262,9 +260,7 @@ def checkforpeak(thecarddata, cardmax, cardmin, thetimepoint, lastpeak):
         return False
 
 
-def nirstohb(
-    val1, val2, lambda1=780, lambda2=830, sdspace=1.0, dontcombine=False, age=20
-):
+def nirstohb(val1, val2, lambda1=780, lambda2=830, sdspace=1.0, dontcombine=False, age=20):
     delta_OD_1 = -np.log(val1)
     delta_OD_2 = -np.log(val2)
     key_1 = str(lambda1)
@@ -281,14 +277,10 @@ def nirstohb(
         tHb_raw_data = HbO_raw_data + HbR_raw_data
     else:
         HbO_raw_data = (
-            1000.0
-            * (delta_OD_1 / dp_1 * eHb[key_2] - delta_OD_2 / dp_2 * eHb[key_1])
-            / den
+            1000.0 * (delta_OD_1 / dp_1 * eHb[key_2] - delta_OD_2 / dp_2 * eHb[key_1]) / den
         )
         HbR_raw_data = (
-            1000.0
-            * (delta_OD_2 / dp_2 * eHbO[key_1] - delta_OD_1 / dp_1 * eHbO[key_2])
-            / den
+            1000.0 * (delta_OD_2 / dp_2 * eHbO[key_1] - delta_OD_1 / dp_1 * eHbO[key_2]) / den
         )
         tHb_raw_data = HbO_raw_data + HbR_raw_data
     return HbO_raw_data, HbR_raw_data, tHb_raw_data
@@ -329,14 +321,10 @@ def od_to_conc(delta_OD_ir, delta_OD_vis, vislambda=660, irlambda=920, sdspace=1
     den = eHbO[viskey] * eHb[irkey] - eHbO[irkey] * eHb[viskey]
 
     HbO_raw_data = (
-        1000.0
-        * (delta_OD_vis / vis_dp * eHb[irkey] - delta_OD_ir / ir_dp * eHb[viskey])
-        / den
+        1000.0 * (delta_OD_vis / vis_dp * eHb[irkey] - delta_OD_ir / ir_dp * eHb[viskey]) / den
     )
     HbR_raw_data = (
-        1000.0
-        * (delta_OD_ir / ir_dp * eHbO[viskey] - delta_OD_vis / vis_dp * eHbO[irkey])
-        / den
+        1000.0 * (delta_OD_ir / ir_dp * eHbO[viskey] - delta_OD_vis / vis_dp * eHbO[irkey]) / den
     )
     tHb_raw_data = HbO_raw_data + HbR_raw_data
     return HbO_raw_data, HbR_raw_data, tHb_raw_data
@@ -416,9 +404,7 @@ def rt_QRSdiscriminator(
     global QRSFIRinited, QRSbpfiltcoffs
     global QRSFIRlen
     if (not QRSFIRinited) or reinitQRSFIR:
-        QRSFIRlen = int(
-            round(QRSFIRtime * actualsamplerate)
-        )  # convert from time to points
+        QRSFIRlen = int(round(QRSFIRtime * actualsamplerate))  # convert from time to points
         QRSFIRlen += 1 - (QRSFIRlen % 2)  # make sure QRSFIRlen is odd
         QRSbpfiltcoffs = design_QRS_filter(actualsamplerate, QRSFIRlen)
         print("inited QRS higpass filter")
@@ -428,9 +414,7 @@ def rt_QRSdiscriminator(
     QRSbpfiltlen = len(QRSbpfiltcoffs)
     if thetimepoint >= QRSbpfiltlen:
         theqrsdata[thetimepoint] = np.abs(
-            np.dot(
-                therawdata[thetimepoint - QRSbpfiltlen : thetimepoint], QRSbpfiltcoffs
-            )
+            np.dot(therawdata[thetimepoint - QRSbpfiltlen : thetimepoint], QRSbpfiltcoffs)
         )
 
 
@@ -529,17 +513,13 @@ def rt_splitdata(therawdata, thetimepoint, thecardsq, fps, reinitphysioFIR=False
     # thecardsq[thetimepoint] = thecarddatapt * thecarddatapt
     if thetimepoint >= cardsmoothfiltlen:
         # TODO what should thecardrms be while timepoint < cardsmoothfiltlen?? nan??
-        thecardrmspt = np.sqrt(
-            np.dot(thecardsq.get_last(cardsmoothfiltlen), cardsmoothfiltcoffs)
-        )
+        thecardrmspt = np.sqrt(np.dot(thecardsq.get_last(cardsmoothfiltlen), cardsmoothfiltcoffs))
         # thecardrmspt = np.sqrt(np.dot(thecardsq[thetimepoint - cardsmoothfiltlen:thetimepoint], cardsmoothfiltcoffs))
 
     return thecarddatapt, thecardrmspt, therespdatapt, thelfodatapt
 
 
-def rt_splitacdcdata(
-    therawdata, thetimepoint, theDCdata, theACdata, fps, reinitacdcFIR=False
-):
+def rt_splitacdcdata(therawdata, thetimepoint, theDCdata, theACdata, fps, reinitacdcFIR=False):
     global acdcFIRinited, dcfiltcoffs
     global acdcFIRlen
 
@@ -603,9 +583,7 @@ cardpeak -- circularlist
 """
 
 
-def rt_updateheartrate(
-    samplerate, carddata, cardrmspt, thetimepoint, currentheartrate, cardpeak
-):
+def rt_updateheartrate(samplerate, carddata, cardrmspt, thetimepoint, currentheartrate, cardpeak):
     has_peak = 0
     if carddata[-1] / cardrmspt > hbthresh:
         peakregion = 1
@@ -731,9 +709,7 @@ def msd(signal, N=250, debug=False):
         print("using a window of", 2 * N + 1, "points")
     themsd = 0.0 * signal
     for i in range(1, len(signal)):
-        themsd[i] = np.std(
-            signal[np.max((0, i - N)) : np.min((len(signal) - 1, i + N))]
-        )
+        themsd[i] = np.std(signal[np.max((0, i - N)) : np.min((len(signal) - 1, i + N))])
     if debug:
         plt.plot(signal)
         plt.plot(themsd)
@@ -794,9 +770,7 @@ def getsplines(tvals, signal, segmentlist):
                 signal[theregion[0] : theregion[1] + 1],
                 s=thesval,
             )
-            thesplines.append(
-                interpolate.splev(tvals[theregion[0] : theregion[1] + 1], tck)
-            )
+            thesplines.append(interpolate.splev(tvals[theregion[0] : theregion[1] + 1], tck))
         else:
             thesplines.append(None)
     return thesplines
@@ -805,9 +779,7 @@ def getsplines(tvals, signal, segmentlist):
 # applies the wavelet transform to the signal, then thresholds
 # the coefficients to reduce noise
 # based on Molavi et al, doi: 10.1117/12.875741
-def wavelet_despike(
-    data, pvalue=0.05, thewavelet="db6", verbose=False, avoid=None, debug=False
-):
+def wavelet_despike(data, pvalue=0.05, thewavelet="db6", verbose=False, avoid=None, debug=False):
     if verbose:
         print("applying forward wavelet transform...")
 
@@ -967,9 +939,7 @@ def readvecs(inputfilename):
 
 
 def hamming(length):
-    return 0.54 - 0.46 * np.cos(
-        np.arange(0.0, 2.0 * np.pi, 2.0 * np.pi / float(length))
-    )
+    return 0.54 - 0.46 * np.cos(np.arange(0.0, 2.0 * np.pi, 2.0 * np.pi / float(length)))
 
 
 # http://stackoverflow.com/questions/12323959/fast-cross-correlation-method-in-python
@@ -985,17 +955,15 @@ def normxcorr(vector1, vector2, Fs, thelabel):
     vec1len = len(vector1)
     vec2len = len(vector2)
     # print(vec1len,vec2len)
-    thexcorr = fastcorrelate(
-        hamming(vec1len) * vector1, hamming(vec2len) * vector2, mode="full"
-    )
+    thexcorr = fastcorrelate(hamming(vec1len) * vector1, hamming(vec2len) * vector2, mode="full")
     xcorrlen = len(thexcorr)
     # print(vec1len,vec2len,xcorrlen)
-    normfac1 = fastcorrelate(
-        hamming(vec1len) * vector1, hamming(vec1len) * vector1, mode="full"
-    )[int(xcorrlen / 2)]
-    normfac2 = fastcorrelate(
-        hamming(vec2len) * vector2, hamming(vec2len) * vector2, mode="full"
-    )[int(xcorrlen / 2)]
+    normfac1 = fastcorrelate(hamming(vec1len) * vector1, hamming(vec1len) * vector1, mode="full")[
+        int(xcorrlen / 2)
+    ]
+    normfac2 = fastcorrelate(hamming(vec2len) * vector2, hamming(vec2len) * vector2, mode="full")[
+        int(xcorrlen / 2)
+    ]
     thenormxcorr = thexcorr / np.sqrt(normfac1 * normfac2)
     sampletime = 1.0 / Fs
     xcorr_x = np.r_[0.0:xcorrlen] * sampletime - ((xcorrlen - 1) * sampletime) / 2.0
@@ -1061,9 +1029,7 @@ def arb_pass(samplerate, inputdata, usebutterworthfilter, arb_lowerpass, arb_upp
         return tide_filt.dohpfiltfilt(
             samplerate,
             arb_lowerpass,
-            tide_filt.dolpfiltfilt(
-                samplerate, arb_upperpass, inputdata, defaultbutterorder
-            ),
+            tide_filt.dolpfiltfilt(samplerate, arb_upperpass, inputdata, defaultbutterorder),
             2,
         )
     else:
@@ -1077,9 +1043,7 @@ def arb_pass(samplerate, inputdata, usebutterworthfilter, arb_lowerpass, arb_upp
                 inputdata,
             )
         else:
-            return tide_filt.dobpfftfilt(
-                samplerate, arb_lowerpass, arb_upperpass, inputdata
-            )
+            return tide_filt.dobpfftfilt(samplerate, arb_lowerpass, arb_upperpass, inputdata)
 
 
 def lfo_pass(samplerate, inputdata, usebutterworthfilter):
@@ -1087,9 +1051,7 @@ def lfo_pass(samplerate, inputdata, usebutterworthfilter):
         return tide_filt.dohpfiltfilt(
             samplerate,
             lf_lowerpass,
-            tide_filt.dolpfiltfilt(
-                samplerate, lf_upperpass, inputdata, defaultbutterorder
-            ),
+            tide_filt.dolpfiltfilt(samplerate, lf_upperpass, inputdata, defaultbutterorder),
             2,
         )
     else:
@@ -1103,9 +1065,7 @@ def lfo_pass(samplerate, inputdata, usebutterworthfilter):
                 inputdata,
             )
         else:
-            return tide_filt.dobpfftfilt(
-                samplerate, lf_lowerpass, lf_upperpass, inputdata
-            )
+            return tide_filt.dobpfftfilt(samplerate, lf_lowerpass, lf_upperpass, inputdata)
 
 
 def resp_pass(samplerate, inputdata, usebutterworthfilter):
@@ -1124,9 +1084,7 @@ def resp_pass(samplerate, inputdata, usebutterworthfilter):
                 inputdata,
             )
         else:
-            return tide_filt.dobpfftfilt(
-                samplerate, resp_lowerpass, resp_upperpass, inputdata
-            )
+            return tide_filt.dobpfftfilt(samplerate, resp_lowerpass, resp_upperpass, inputdata)
 
 
 def card_pass(samplerate, inputdata, usebutterworthfilter):
@@ -1145,9 +1103,7 @@ def card_pass(samplerate, inputdata, usebutterworthfilter):
                 inputdata,
             )
         else:
-            return tide_filt.dobpfftfilt(
-                samplerate, card_lowerpass, card_upperpass, inputdata
-            )
+            return tide_filt.dobpfftfilt(samplerate, card_lowerpass, card_upperpass, inputdata)
 
 
 def padvec(indata, padlen=1000):
@@ -1221,9 +1177,7 @@ class noncausalprefilter:
         elif self.filtertype == "cardiac":
             return card_pass(samplerate, data, self.usebutterworth).real
         elif self.filtertype == "cardsmooth":
-            return env_pass(
-                samplerate, data, self.usebutterworth, env_upperpass=0.2
-            ).real
+            return env_pass(samplerate, data, self.usebutterworth, env_upperpass=0.2).real
         elif self.filtertype == "arb":
             return arb_pass(
                 samplerate, data, self.usebutterworth, self.arb_lower, self.arb_upper
@@ -1253,9 +1207,7 @@ def gaussfit(height, loc, width, xvals, yvals):
 
 def env_pass(samplerate, inputdata, usebutterworthfilter, env_upperpass=0.5):
     if usebutterworthfilter:
-        return tide_filt.dolpfiltfilt(
-            samplerate, env_upperpass, inputdata, defaultbutterorder
-        )
+        return tide_filt.dolpfiltfilt(samplerate, env_upperpass, inputdata, defaultbutterorder)
     else:
         if trapezoidalfftfilter:
             return tide_filt.dolptrapfftfilt(
@@ -1265,9 +1217,7 @@ def env_pass(samplerate, inputdata, usebutterworthfilter, env_upperpass=0.5):
             return tide_filt.dolpfftfilt(samplerate, env_upperpass, inputdata)
 
 
-def normalize_cardiac(
-    data, samplerate, env_upperpass=0.5, thresh=0.3, winsizeinsecs=1.0
-):
+def normalize_cardiac(data, samplerate, env_upperpass=0.5, thresh=0.3, winsizeinsecs=1.0):
     winsizeinpoints = int(winsizeinsecs * samplerate)
 
     localmax = np.zeros((len(data)), dtype="float")
@@ -1332,9 +1282,7 @@ def procpeaks(
         peakdictlist[-1]["bldiff"] = 1.0 * minlocs[i + 1, 1] - minlocs[i, 1]
         peakdictlist[-1]["confidence"] = 0.0
     for i in range(1, len(minlocs) - 1):
-        peakdictlist[i]["rri"] = (
-            peakdictlist[i]["starttime"] - peakdictlist[i - 1]["starttime"]
-        )
+        peakdictlist[i]["rri"] = peakdictlist[i]["starttime"] - peakdictlist[i - 1]["starttime"]
     if len(peakdictlist) > 1:
         peakdictlist[0]["rri"] = peakdictlist[1]["rri"]
 
@@ -1406,9 +1354,7 @@ def procpeaks(
             if peakloc < len(peakmarkers):
                 peakmarkers[peakloc] = 1.0
         else:
-            peakloc = bisect.bisect_left(
-                timeaxis, thepeak["starttime"] + thepeak["risetime"]
-            )
+            peakloc = bisect.bisect_left(timeaxis, thepeak["starttime"] + thepeak["risetime"])
             if peakloc < len(peakmarkers):
                 peakmarkers[peakloc] = 1.0
 
@@ -1444,9 +1390,7 @@ def procpeaks(
         copylen = np.min([thislen, maxpeaklen])
         if copylen > 0 and indexstart < len(timeaxis) - copylen - 1:
             waveformsum[0:copylen] += waveform[indexstart : indexstart + copylen]
-            waveformwt[0:copylen] += (
-                0.0 * waveform[indexstart : indexstart + copylen] + 1.0
-            )
+            waveformwt[0:copylen] += 0.0 * waveform[indexstart : indexstart + copylen] + 1.0
 
         # prepare for next peak
         indexstart = indexend
@@ -1474,9 +1418,7 @@ def procpeaks(
     )
 
 
-def locallpeaks(
-    timeaxis, data, samplerate, winsizeinsecs=1.5, thresh=0.5, hysteresissecs=0.4
-):
+def locallpeaks(timeaxis, data, samplerate, winsizeinsecs=1.5, thresh=0.5, hysteresissecs=0.4):
     peaklist = []
     rrinterval = np.zeros((len(data)), dtype="float")
     peaks = np.zeros((len(data)), dtype="float")
@@ -1551,18 +1493,11 @@ def rt_locpeak(
         if data[-2] <= data[-3]:
             fitstart = -5
             fitdata = data[fitstart:]
-            X = (
-                currenttime
-                + (np.arange(0.0, len(fitdata)) - len(fitdata) + 1.0) / samplerate
-            )
+            X = currenttime + (np.arange(0.0, len(fitdata)) - len(fitdata) + 1.0) / samplerate
             maxtime = np.sum(X * fitdata) / np.sum(fitdata)
-            maxsigma = np.sqrt(
-                abs(np.sum((X - maxtime) ** 2 * fitdata) / np.sum(fitdata))
-            )
+            maxsigma = np.sqrt(abs(np.sum((X - maxtime) ** 2 * fitdata) / np.sum(fitdata)))
             maxval = fitdata.max()
-            peakheight, peakloc, peakwidth = gaussfit(
-                maxval, maxtime, maxsigma, X, fitdata
-            )
+            peakheight, peakloc, peakwidth = gaussfit(maxval, maxtime, maxsigma, X, fitdata)
             if (abs(peakloc - maxtime) > 3.0 / samplerate) or peakloc > currenttime:
                 # fit bombed
                 print("fit failure - skipping peak")
@@ -1634,9 +1569,7 @@ def filterpeaklist(peaklist, debug=False):
                 print(i, " is good")
             if isquestionable:
                 for j in range(firstquestionable, i + 1):
-                    peaklist[j][
-                        "confidence"
-                    ] = 0.5  # if we're here, the peak was questionable,
+                    peaklist[j]["confidence"] = 0.5  # if we're here, the peak was questionable,
                     # but we now believe it's good
             else:
                 peaklist[i]["confidence"] = 1.0  # if we're here, the peak is just good
@@ -1749,27 +1682,20 @@ def filterpeaklist(peaklist, debug=False):
             ):
                 numbad += 1
             tdiff = (
-                peaklist[sourcept + numbad + 1]["starttime"]
-                - filteredpeaklist[-1]["starttime"]
+                peaklist[sourcept + numbad + 1]["starttime"] - filteredpeaklist[-1]["starttime"]
             )
             if debug:
                 print("time gap is ", tdiff)
-            avrri = (
-                peaklist[sourcept + numbad + 1]["rri"] + filteredpeaklist[-1]["rri"]
-            ) / 2.0
+            avrri = (peaklist[sourcept + numbad + 1]["rri"] + filteredpeaklist[-1]["rri"]) / 2.0
             numrebuilt = int(tdiff / avrri)
             if debug:
                 print("average rri is ", avrri, ": ", numrebuilt, " points")
-            rrislope = (
-                peaklist[sourcept + numbad]["rri"] - filteredpeaklist[-1]["rri"]
-            ) / tdiff
+            rrislope = (peaklist[sourcept + numbad]["rri"] - filteredpeaklist[-1]["rri"]) / tdiff
             risetimeslope = (
-                peaklist[sourcept + numbad]["risetime"]
-                - filteredpeaklist[-1]["risetime"]
+                peaklist[sourcept + numbad]["risetime"] - filteredpeaklist[-1]["risetime"]
             ) / tdiff
             falltimeslope = (
-                peaklist[sourcept + numbad]["falltime"]
-                - filteredpeaklist[-1]["falltime"]
+                peaklist[sourcept + numbad]["falltime"] - filteredpeaklist[-1]["falltime"]
             ) / tdiff
             heightslope = (
                 peaklist[sourcept + numbad]["height"] - filteredpeaklist[-1]["height"]
@@ -1798,25 +1724,20 @@ def filterpeaklist(peaklist, debug=False):
                     filteredpeaklist[-1]["starttime"] + filteredpeaklist[-1]["rri"]
                 )
                 newentry["rri"] = (
-                    rrislope * (newentry["starttime"] - t0)
-                    + filteredpeaklist[-1]["rri"]
+                    rrislope * (newentry["starttime"] - t0) + filteredpeaklist[-1]["rri"]
                 )
                 newentry["endtime"] = newentry["starttime"] + newentry["rri"]
                 newentry["risetime"] = (
-                    risetimeslope * (newentry["starttime"] - t0)
-                    + filteredpeaklist[-1]["risetime"]
+                    risetimeslope * (newentry["starttime"] - t0) + filteredpeaklist[-1]["risetime"]
                 )
                 newentry["falltime"] = (
-                    falltimeslope * (newentry["endtime"] - t0)
-                    - filteredpeaklist[-1]["risetime"]
+                    falltimeslope * (newentry["endtime"] - t0) - filteredpeaklist[-1]["risetime"]
                 )
                 newentry["height"] = (
-                    heightslope * (newentry["starttime"] - t0)
-                    + filteredpeaklist[-1]["height"]
+                    heightslope * (newentry["starttime"] - t0) + filteredpeaklist[-1]["height"]
                 )
                 newentry["bldiff"] = (
-                    bldiffslope * (newentry["starttime"] - t0)
-                    + filteredpeaklist[-1]["bldiff"]
+                    bldiffslope * (newentry["starttime"] - t0) + filteredpeaklist[-1]["bldiff"]
                 )
                 newentry["confidence"] = 0.25
                 filteredpeaklist.append(newentry)

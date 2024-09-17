@@ -306,9 +306,7 @@ def fitpdf(thehist, histlen, endtrim, thedata, displayplots=False):
     thestd = thedata.std()
     theskew = sp.stats.stats.skew(thedata)
     # print('initial histogram stats:', theamp, themean, thestd, theskew)
-    thefit = gaussfitsk(
-        theamp, themean, thestd, theskew, thestore[0, :], thestore[1, :]
-    )
+    thefit = gaussfitsk(theamp, themean, thestd, theskew, thestore[0, :], thestore[1, :])
     # print('final histogram stats:', thefit[0], thefit[1], thefit[2], thefit[3])
     if displayplots:
         displaytitle = "histogram fit to skewed normal distribution"
@@ -405,8 +403,7 @@ def mlregress(x, y, intercept=True):
         p, nx = x.shape
         if nx != n:
             raise AttributeError(
-                "x and y must have have the same number of samples (%d and %d)"
-                % (nx, n)
+                "x and y must have have the same number of samples (%d and %d)" % (nx, n)
             )
 
     if intercept is True:
@@ -530,39 +527,27 @@ def quickcorr(data1, data2):
     return thepcorr
 
 
-def shorttermcorr_1D(
-    data1, data2, sampletime, windowtime, prewindow=False, dodetrend=False
-):
+def shorttermcorr_1D(data1, data2, sampletime, windowtime, prewindow=False, dodetrend=False):
     windowsize = windowtime // sampletime
     halfwindow = int((windowsize + 1) // 2)
     corrpertime = data1 * 0.0
     ppertime = data1 * 0.0
     for i in range(halfwindow, len(data1) - halfwindow):
-        dataseg1 = corrnormalize(
-            data1[i - halfwindow : i + halfwindow], prewindow, dodetrend
-        )
-        dataseg2 = corrnormalize(
-            data2[i - halfwindow : i + halfwindow], prewindow, dodetrend
-        )
+        dataseg1 = corrnormalize(data1[i - halfwindow : i + halfwindow], prewindow, dodetrend)
+        dataseg2 = corrnormalize(data2[i - halfwindow : i + halfwindow], prewindow, dodetrend)
         thepcorr = sp.stats.stats.pearsonr(dataseg1, dataseg2)
         corrpertime[i] = thepcorr[0]
         ppertime[i] = thepcorr[1]
     return corrpertime, ppertime
 
 
-def shorttermcorr_2D(
-    data1, data2, sampletime, windowtime, prewindow=False, dodetrend=False
-):
+def shorttermcorr_2D(data1, data2, sampletime, windowtime, prewindow=False, dodetrend=False):
     windowsize = windowtime // sampletime
     halfwindow = int((windowsize + 1) // 2)
     xcorrpertime = np.zeros((2 * halfwindow, len(data1)))
     for i in range(halfwindow, len(data1) - halfwindow):
-        dataseg1 = corrnormalize(
-            data1[i - halfwindow : i + halfwindow], prewindow, dodetrend
-        )
-        dataseg2 = corrnormalize(
-            data2[i - halfwindow : i + halfwindow], prewindow, dodetrend
-        )
+        dataseg1 = corrnormalize(data1[i - halfwindow : i + halfwindow], prewindow, dodetrend)
+        dataseg2 = corrnormalize(data2[i - halfwindow : i + halfwindow], prewindow, dodetrend)
         xcorrpertime[:, i] = np.correlate(dataseg1, dataseg2, mode="full")
     return xcorrpertime
 
@@ -897,9 +882,7 @@ def makelaglist(lagstart, lagend, lagstep):
 
 
 # --------------------------- Fitting functions -------------------------------------------------
-def locpeak(
-    data, samplerate, lastpeaktime, winsizeinsecs=5.0, thresh=0.75, hysteresissecs=0.4
-):
+def locpeak(data, samplerate, lastpeaktime, winsizeinsecs=5.0, thresh=0.75, hysteresissecs=0.4):
     # look at a limited time window
     winsizeinsecs = 5.0
     numpoints = int(winsizeinsecs * samplerate)
@@ -924,16 +907,11 @@ def locpeak(
         if data[-2] <= data[-3]:
             fitstart = -5
             fitdata = data[fitstart:]
-            X = (
-                currenttime
-                + (np.arange(0.0, len(fitdata)) - len(fitdata) + 1.0) / samplerate
-            )
+            X = currenttime + (np.arange(0.0, len(fitdata)) - len(fitdata) + 1.0) / samplerate
             maxtime = sum(X * fitdata) / sum(fitdata)
             maxsigma = np.sqrt(abs(sum((X - maxtime) ** 2 * fitdata) / sum(fitdata)))
             maxval = fitdata.max()
-            peakheight, peakloc, peakwidth = gaussfit(
-                maxval, maxtime, maxsigma, X, fitdata
-            )
+            peakheight, peakloc, peakwidth = gaussfit(maxval, maxtime, maxsigma, X, fitdata)
             # print(currenttime,fitdata,X,peakloc)
             return peakloc
         else:
@@ -1200,22 +1178,16 @@ def gaussfit(height, loc, width, xvals, yvals):
 
 # --------------------------- Resampling and time shifting functions -------------------------------------------
 class fastresampler:
-    def __init__(
-        self, timeaxis, timecourse, padvalue=30.0, upsampleratio=100, doplot=False
-    ):
+    def __init__(self, timeaxis, timecourse, padvalue=30.0, upsampleratio=100, doplot=False):
         # print('initializing fastresampler with padvalue =',padvalue)
         self.upsampleratio = upsampleratio
         self.initstep = timeaxis[1] - timeaxis[0]
         self.hiresstep = self.initstep / self.upsampleratio
         self.hires_x = np.r_[
-            timeaxis[0]
-            - padvalue : self.initstep * len(timeaxis)
-            + padvalue : self.hiresstep
+            timeaxis[0] - padvalue : self.initstep * len(timeaxis) + padvalue : self.hiresstep
         ]
         self.hiresstart = self.hires_x[0]
-        self.hires_y = doresample(
-            timeaxis, timecourse, self.hires_x, method="univariate"
-        )
+        self.hires_y = doresample(timeaxis, timecourse, self.hires_x, method="univariate")
         self.hires_y[: padvalue // self.hiresstep] = 0.0
         self.hires_y[-padvalue // self.hiresstep :] = 0.0
         if doplot:
@@ -1251,9 +1223,7 @@ class fastresampler:
         return 1.0 * out_y
 
 
-def prepforfastresample(
-    orig_x, orig_y, numtrs, fmritr, padvalue, upsampleratio, doplot=False
-):
+def prepforfastresample(orig_x, orig_y, numtrs, fmritr, padvalue, upsampleratio, doplot=False):
     hiresstep = fmritr / upsampleratio
     hires_x_padded = np.r_[-padvalue : fmritr * numtrs + padvalue : hiresstep]
     hiresstart = hires_x_padded[0]
@@ -1280,14 +1250,10 @@ def dofastresample(orig_x, orig_y, new_x, hrstep, hrstart, upsampleratio):
 def doresample(orig_x, orig_y, new_x, method="cubic"):
     if method == "cubic":
         cj = sp.signal.cspline1d(orig_y)
-        return sp.signal.cspline1d_eval(
-            cj, new_x, dx=(orig_x[1] - orig_x[0]), x0=orig_x[0]
-        )
+        return sp.signal.cspline1d_eval(cj, new_x, dx=(orig_x[1] - orig_x[0]), x0=orig_x[0])
     elif method == "quadratic":
         qj = sp.signal.qspline1d(orig_y)
-        return sp.signal.qspline1d_eval(
-            qj, new_x, dx=(orig_x[1] - orig_x[0]), x0=orig_x[0]
-        )
+        return sp.signal.qspline1d_eval(qj, new_x, dx=(orig_x[1] - orig_x[0]), x0=orig_x[0])
     elif method == "univariate":
         interpolator = sp.interpolate.UnivariateSpline(
             orig_x, orig_y, k=3, s=0
@@ -1384,9 +1350,7 @@ def calcsliceoffset(sotype, slicenum, numslices, tr, multiband=1):
                 slicetime = (tr / numslices) * (slicenum / 2)
             else:
                 # odd slice number
-                slicetime = (tr / numslices) * (
-                    (numslices + 1) / 2 + (slicenum - 1) / 2
-                )
+                slicetime = (tr / numslices) * ((numslices + 1) / 2 + (slicenum - 1) / 2)
 
     # Siemens multiband interleave format
     if sotype == 7:
@@ -1426,9 +1390,7 @@ def timeshift(inputtc, shifttrs, padtrs, doplot=False):
     weights = np.zeros(thepaddedlen)  # initialize the weight buffer (with pad)
 
     # now do the math
-    preshifted_y[padtrs : padtrs + thelen] = inputtc[
-        :
-    ]  # copy initial data into shift buffer
+    preshifted_y[padtrs : padtrs + thelen] = inputtc[:]  # copy initial data into shift buffer
     weights[padtrs : padtrs + thelen] = 1.0  # put in the weight vector
     revtc = inputtc[::-1]  # reflect data around ends to
     preshifted_y[0:padtrs] = revtc[-padtrs:]  # eliminate discontinuities
@@ -1507,9 +1469,7 @@ def timeshift2(inputtc, shifttrs, padtrs, doplot=False, dopostfilter=False):
     # now do the math
     preshifted_x = np.arange(0.0, len(preshifted_y), 1.0)
     shifted_x = preshifted_x - shifttrs
-    preshifted_y[offset : offset + thelen] = inputtc[
-        :
-    ]  # copy initial data into shift buffer
+    preshifted_y[offset : offset + thelen] = inputtc[:]  # copy initial data into shift buffer
     revtc = inputtc[::-1]
     preshifted_y[0:offset] = revtc[-offset:]
     preshifted_y[offset + thelen :] = revtc[0:offset]
@@ -1567,9 +1527,7 @@ def blackmanharris(length):
     a1 = 0.48829
     a2 = 0.14128
     a3 = 0.01168
-    return (
-        a0 - a1 * np.cos(argvec) + a2 * np.cos(2.0 * argvec) - a3 * np.cos(3.0 * argvec)
-    )
+    return a0 - a1 * np.cos(argvec) + a2 * np.cos(2.0 * argvec) - a3 * np.cos(3.0 * argvec)
 
 
 def hann(length):
@@ -1583,9 +1541,7 @@ def hamming(length):
 def envdetect(vector, filtwidth=3.0):
     demeaned = vector - np.mean(vector)
     sigabs = abs(demeaned)
-    return dolptrapfftfilt(
-        1.0, 1.0 / (2.0 * filtwidth), 1.1 / (2.0 * filtwidth), sigabs
-    )
+    return dolptrapfftfilt(1.0, 1.0 / (2.0 * filtwidth), 1.1 / (2.0 * filtwidth), sigabs)
 
 
 # --------------------------- Normalization functions -------------------------------------------------
@@ -1648,9 +1604,7 @@ def unpadvec(indata, padlen=20):
 
 
 def ssmooth(xsize, ysize, zsize, sigma, thedata):
-    return sp.ndimage.gaussian_filter(
-        thedata, [sigma / xsize, sigma / ysize, sigma / zsize]
-    )
+    return sp.ndimage.gaussian_filter(thedata, [sigma / xsize, sigma / ysize, sigma / zsize])
 
 
 # - butterworth filters
@@ -1658,18 +1612,14 @@ def dolpfiltfilt(samplefreq, cutofffreq, indata, order, padlen=20):
     if cutofffreq > samplefreq / 2.0:
         cutofffreq = samplefreq / 2.0
     [b, a] = sp.signal.butter(order, 2.0 * cutofffreq / samplefreq)
-    return unpadvec(
-        sp.signal.filtfilt(b, a, padvec(indata, padlen=padlen)).real, padlen=padlen
-    )
+    return unpadvec(sp.signal.filtfilt(b, a, padvec(indata, padlen=padlen)).real, padlen=padlen)
 
 
 def dohpfiltfilt(samplefreq, cutofffreq, indata, order, padlen=20):
     if cutofffreq < 0.0:
         cutofffreq = 0.0
     [b, a] = sp.signal.butter(order, 2.0 * cutofffreq / samplefreq, "highpass")
-    return unpadvec(
-        sp.signal.filtfilt(b, a, padvec(indata, padlen=padlen)).real, padlen=padlen
-    )
+    return unpadvec(sp.signal.filtfilt(b, a, padvec(indata, padlen=padlen)).real, padlen=padlen)
 
 
 def dobpfiltfilt(samplefreq, cutofffreq_low, cutofffreq_high, indata, order, padlen=20):
@@ -1682,9 +1632,7 @@ def dobpfiltfilt(samplefreq, cutofffreq_low, cutofffreq_high, indata, order, pad
         [2.0 * cutofffreq_low / samplefreq, 2.0 * cutofffreq_high / samplefreq],
         "bandpass",
     )
-    return unpadvec(
-        sp.signal.filtfilt(b, a, padvec(indata, padlen=padlen)).real, padlen=padlen
-    )
+    return unpadvec(sp.signal.filtfilt(b, a, padvec(indata, padlen=padlen)).real, padlen=padlen)
 
 
 def doprecalcfiltfilt(b, a, indata):
@@ -1804,9 +1752,9 @@ def dobptrapfftfilt(
             " Fstopu=",
             stopfreq_high,
         )
-    filterfunc = getlptrapfftfunc(
-        samplefreq, passfreq_high, stopfreq_high, padindata
-    ) * (1.0 - getlptrapfftfunc(samplefreq, stopfreq_low, passfreq_low, padindata))
+    filterfunc = getlptrapfftfunc(samplefreq, passfreq_high, stopfreq_high, padindata) * (
+        1.0 - getlptrapfftfunc(samplefreq, stopfreq_low, passfreq_low, padindata)
+    )
     if False:
         freqs = np.arange(0.0, samplefreq, samplefreq / len(filterfunc))
         pl.plot(freqs, filterfunc)
@@ -1841,9 +1789,7 @@ def specsplit(samplerate, inputdata, bandwidth, usebutterworth=False):
     for theband in range(0, numbands):
         print("filtering from ", lowerlim, " to ", upperlim)
         if usebutterworth:
-            alldata[:, theband] = dobpfiltfilt(
-                samplerate, lowerlim, upperlim, inputdata, 2
-            )
+            alldata[:, theband] = dobpfiltfilt(samplerate, lowerlim, upperlim, inputdata, 2)
         else:
             alldata[:, theband] = dobpfftfilt(samplerate, lowerlim, upperlim, inputdata)
         bandcenters[theband] = np.sqrt(upperlim * lowerlim)
@@ -1869,9 +1815,7 @@ def arb_pass(
     if arb_lowerpass <= 0.0:
         # set up for lowpass
         if usebutterworth:
-            return dolpfiltfilt(
-                samplerate, arb_upperpass, inputdata, butterorder, padlen=padlen
-            )
+            return dolpfiltfilt(samplerate, arb_upperpass, inputdata, butterorder, padlen=padlen)
         else:
             if usetrapfftfilt:
                 return dolptrapfftfilt(
@@ -1882,9 +1826,7 @@ def arb_pass(
     elif (arb_upperpass >= samplerate / 2.0) or (arb_upperpass <= 0.0):
         # set up for highpass
         if usebutterworth:
-            return dohpfiltfilt(
-                samplerate, arb_lowerpass, inputdata, butterorder, padlen=padlen
-            )
+            return dohpfiltfilt(samplerate, arb_lowerpass, inputdata, butterorder, padlen=padlen)
         else:
             if usetrapfftfilt:
                 return dohptrapfftfilt(
@@ -1898,9 +1840,7 @@ def arb_pass(
             return dohpfiltfilt(
                 samplerate,
                 arb_lowerpass,
-                dolpfiltfilt(
-                    samplerate, arb_upperpass, inputdata, butterorder, padlen=padlen
-                ),
+                dolpfiltfilt(samplerate, arb_upperpass, inputdata, butterorder, padlen=padlen),
                 butterorder,
                 padlen=padlen,
             )
@@ -1932,9 +1872,7 @@ def ringstop(
         return dolpfiltfilt(samplerate, samplerate / 4.0, inputdata, butterorder), 2
     else:
         if usetrapfftfilt:
-            return dolptrapfftfilt(
-                samplerate, samplerate / 4.0, 1.1 * samplerate / 4.0, inputdata
-            )
+            return dolptrapfftfilt(samplerate, samplerate / 4.0, 1.1 * samplerate / 4.0, inputdata)
         else:
             return dolpfftfilt(samplerate, samplerate / 4.0, inputdata)
 
@@ -1991,9 +1929,7 @@ def resp_pass(
     usetrapfftfilt=True,
 ):
     if usebutterworth:
-        return dobpfiltfilt(
-            samplerate, RESP_LOWERPASS, RESP_UPPERPASS, inputdata, butterorder
-        )
+        return dobpfiltfilt(samplerate, RESP_LOWERPASS, RESP_UPPERPASS, inputdata, butterorder)
     else:
         if usetrapfftfilt:
             return dobptrapfftfilt(
@@ -2016,9 +1952,7 @@ def card_pass(
     usetrapfftfilt=True,
 ):
     if usebutterworth:
-        return dobpfiltfilt(
-            samplerate, CARD_LOWERPASS, CARD_UPPERPASS, inputdata, butterorder
-        )
+        return dobpfiltfilt(samplerate, CARD_LOWERPASS, CARD_UPPERPASS, inputdata, butterorder)
     else:
         if usetrapfftfilt:
             return dobptrapfftfilt(
@@ -2115,14 +2049,10 @@ class noncausalfilter:
 
     def setarb(self, lowerstop, lowerpass, upperpass, upperstop):
         if not (lowerstop <= lowerpass < upperpass):
-            print(
-                "noncausalfilter error: lowerpass must be between lowerstop and upperpass"
-            )
+            print("noncausalfilter error: lowerpass must be between lowerstop and upperpass")
             sys.exit()
         if not (lowerpass < upperpass <= upperstop):
-            print(
-                "noncausalfilter error: upperpass must be between lowerpass and upperstop"
-            )
+            print("noncausalfilter error: upperpass must be between lowerpass and upperstop")
             sys.exit()
         self.arb_lowerstop = 1.0 * lowerstop
         self.arb_lowerpass = 1.0 * lowerpass
@@ -2283,7 +2213,5 @@ def progressbar(thisval, end_val, label="Percent", barsize=60):
     percent = float(thisval) / end_val
     hashes = "#" * int(round(percent * barsize))
     spaces = " " * (barsize - len(hashes))
-    sys.stdout.write(
-        "\r{0}: [{1}] {2:.3f}%".format(label, hashes + spaces, 100.0 * percent)
-    )
+    sys.stdout.write("\r{0}: [{1}] {2:.3f}%".format(label, hashes + spaces, 100.0 * percent))
     sys.stdout.flush()

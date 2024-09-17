@@ -82,9 +82,7 @@ def readbidstsv(inputfilename, colspec=None, warn=True, debug=False):
                 columns = d["Columns"]
             except:
                 if debug:
-                    print(
-                        "no columns found in json, will take labels from the tsv file"
-                    )
+                    print("no columns found in json, will take labels from the tsv file")
                 columns = None
                 if warn:
                     print(
@@ -242,14 +240,12 @@ def writebidstsv(
     else:
         reshapeddata = data
     if append:
-        insamplerate, instarttime, incolumns, indata, incompressed, incolsource = (
-            readbidstsv(outputfileroot + ".json", debug=debug)
+        insamplerate, instarttime, incolumns, indata, incompressed, incolsource = readbidstsv(
+            outputfileroot + ".json", debug=debug
         )
         if debug:
             print("appending")
-            print(
-                insamplerate, instarttime, incolumns, indata, incompressed, incolsource
-            )
+            print(insamplerate, instarttime, incolumns, indata, incompressed, incolsource)
         if insamplerate is None:
             # file does not already exist
             if debug:
@@ -333,7 +329,7 @@ def writebidstsv(
             print(f"headerdict: {headerdict}")
         with open(outputfileroot + ".json", "wb") as fp:
             fp.write(
-                json.dumps(
-                    headerdict, sort_keys=True, indent=4, separators=(",", ":")
-                ).encode("utf-8")
+                json.dumps(headerdict, sort_keys=True, indent=4, separators=(",", ":")).encode(
+                    "utf-8"
+                )
             )
