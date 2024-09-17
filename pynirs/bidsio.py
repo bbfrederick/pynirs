@@ -11,8 +11,10 @@ import numpy as np
 import pandas as pd
 import json
 
+
 def makecolname(colnum, startcol):
     return f"col_{str(colnum + startcol).zfill(2)}"
+
 
 def readbidstsv(inputfilename, colspec=None, warn=True, debug=False):
     r"""Read time series out of a BIDS tsv file
@@ -80,7 +82,9 @@ def readbidstsv(inputfilename, colspec=None, warn=True, debug=False):
                 columns = d["Columns"]
             except:
                 if debug:
-                    print("no columns found in json, will take labels from the tsv file")
+                    print(
+                        "no columns found in json, will take labels from the tsv file"
+                    )
                 columns = None
                 if warn:
                     print(
@@ -226,6 +230,7 @@ def writebidstsv(
         print("\toutputfileroot:", outputfileroot)
         print("\tdata.shape:", data.shape)
         print("\tsamplerate:", samplerate)
+        print("\tstarttime:", starttime)
         print("\tcompressed:", compressed)
         print("\tcolumns:", columns)
         print("\tstarttime:", starttime)
@@ -237,12 +242,14 @@ def writebidstsv(
     else:
         reshapeddata = data
     if append:
-        insamplerate, instarttime, incolumns, indata, incompressed, incolsource = readbidstsv(
-            outputfileroot + ".json", debug=debug
+        insamplerate, instarttime, incolumns, indata, incompressed, incolsource = (
+            readbidstsv(outputfileroot + ".json", debug=debug)
         )
         if debug:
             print("appending")
-            print(insamplerate, instarttime, incolumns, indata, incompressed, incolsource)
+            print(
+                insamplerate, instarttime, incolumns, indata, incompressed, incolsource
+            )
         if insamplerate is None:
             # file does not already exist
             if debug:
@@ -295,11 +302,19 @@ def writebidstsv(
         df = pd.DataFrame(data=np.transpose(reshapeddata), columns=columns)
     if compressed:
         df.to_csv(
-            outputfileroot + ".tsv.gz", sep="\t", compression="gzip", header=colsintsv, index=False
+            outputfileroot + ".tsv.gz",
+            sep="\t",
+            compression="gzip",
+            header=colsintsv,
+            index=False,
         )
     else:
         df.to_csv(
-            outputfileroot + ".tsv", sep="\t", compression=None, header=colsintsv, index=False
+            outputfileroot + ".tsv",
+            sep="\t",
+            compression=None,
+            header=colsintsv,
+            index=False,
         )
     headerdict = {}
     headerdict["SamplingFrequency"] = float(samplerate)
@@ -314,9 +329,11 @@ def writebidstsv(
             headerdict[key] = extraheaderinfo[key]
 
     if not omitjson:
+        if debug:
+            print(f"headerdict: {headerdict}")
         with open(outputfileroot + ".json", "wb") as fp:
             fp.write(
-                json.dumps(headerdict, sort_keys=True, indent=4, separators=(",", ":")).encode(
-                    "utf-8"
-                )
+                json.dumps(
+                    headerdict, sort_keys=True, indent=4, separators=(",", ":")
+                ).encode("utf-8")
             )

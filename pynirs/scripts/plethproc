@@ -116,6 +116,7 @@ def usage():
     print(
         "     -S outputrate  - sample rate in Hz to output the data (default is 30).  Set to -1 for no resampling"
     )
+    print("     -Z             - use absolute time in time axis")
     print("     -d             - despike data")
     print("     -w             - use wavelet filter to despike data")
     print(
@@ -197,6 +198,7 @@ def main():
     doMARA = False
     pMARA = 0.05
     filtorder = 3
+    useabstime = False
     thepreprefilter = cbvf.noncausalfilter()
     thepreprefilter.setbutter(usebutterworthfilter, filtorder)
 
@@ -217,7 +219,7 @@ def main():
     # print("options:", sys.argv[2:])
     try:
         opts, args = getopt.gnu_getopt(
-            sys.argv, "o:X:m:MxPiAHzcDVLRCF:f:dwp:s:e:S:n:l:N", ["help"]
+            sys.argv, "o:X:m:MxPiAHzcDVLRCF:f:dwp:s:e:S:n:l:NZ", ["help"]
         )
     except getopt.GetoptError as err:
         # print help information and exit:
@@ -240,6 +242,9 @@ def main():
         elif o == "-N":
             dodisplay = False
             print("disabling timecourse display")
+        elif o == "-Z":
+            useabstime = True
+            print("use absolute time on the time axis")
         elif o == "-x":
             dontcombine = True
             print("processing optical channels independendtly")
@@ -401,6 +406,14 @@ def main():
                 engine="python",
                 delim_whitespace=True,
             )
+            # read the absolute start time out of the header
+            with open(inputfilename, "r") as f:
+                firstline = f.readline().strip()
+                dummy, hours, minutes, seconds = firstline.split(":")
+                absstarttime = (
+                    float(hours) * 3600 + float(minutes) * 60 + float(seconds)
+                )
+                print(absstarttime)
             if debug:
                 print(thedata)
             if insamplerate is None:
@@ -416,7 +429,7 @@ def main():
             if debug:
                 print(thedata)
             rawtimeaxis = thedata["timestamp"].values - thedata["timestamp"].values[0]
-
+    print(f"{absstarttime=}")
     if outsamplerate < 0.0:
         outsamplerate = insamplerate
 
@@ -1241,7 +1254,22 @@ def main():
     df = df[cols]
     df.to_csv(outputfilename + "_alldata.txt", sep="\t", index=False)
 
-    io.writebidstsv(outputfilename + "_alldata", df.to_numpy(), outsamplerate, columns=df[cols], debug=debug)
+    if useabstime:
+        print(starttime, absstarttime)
+        outputstarttime = starttime + absstarttime
+    else:
+        outputstarttime = 0.0
+    colstowrite = df.columns[1:]
+    datatowrite = np.transpose(df[colstowrite].to_numpy())
+
+    io.writebidstsv(
+        outputfilename + "_alldata",
+        datatowrite,
+        outsamplerate,
+        columns=colstowrite.tolist(),
+        starttime=outputstarttime,
+        debug=True,
+    )
 
     # now write out the individual channels
     if writeindividual:
