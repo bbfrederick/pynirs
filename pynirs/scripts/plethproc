@@ -4,7 +4,6 @@
 # $Date: 2016/09/20 20:47:15 $
 #       $Id: plethproc.py,v 1.13 2016/09/20 20:47:15 frederic Exp $
 #
-
 import argparse
 import bisect
 import getopt
@@ -16,6 +15,7 @@ import pylab as P
 
 import pynirs.cbv_funcs as cbvf
 import pynirs.spo2funcs as spo2
+import pynirs.bidsio as io
 
 DEFAULT_SAMPLERATE = 33.0
 DEFAULT_SDSPACE = 1.0
@@ -1240,6 +1240,8 @@ def main():
     df = pd.DataFrame(data=d)
     df = df[cols]
     df.to_csv(outputfilename + "_alldata.txt", sep="\t", index=False)
+
+    io.writebidstsv(outputfilename + "_alldata", df.to_numpy(), outsamplerate, columns=df[cols], debug=debug)
 
     # now write out the individual channels
     if writeindividual:
