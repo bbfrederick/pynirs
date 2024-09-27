@@ -1,0 +1,126 @@
+#!/usr/bin/env python
+#
+# $Author: frederic $
+# $Date: 2016/09/20 20:47:15 $
+#       $Id: plethproc.py,v 1.13 2016/09/20 20:47:15 frederic Exp $
+#
+import argparse
+import bisect
+import getopt
+import sys
+
+import numpy as np
+import pandas as pd
+import pylab as P
+
+import pynirs.bidsio as io
+import pynirs.cbv_funcs as cbvf
+import pynirs.spo2funcs as spo2
+
+
+def _get_parser():
+    """
+    Argument parser for plethproc
+    """
+    parser = argparse.ArgumentParser(
+        prog="mergebidstcfiles",
+        description=(
+            "Merge BIDS timecourse files that have the same columns but span different times"
+        ),
+        usage="%(prog)s inputfilename [inputfilename.....] outputfile [options]",
+    )
+
+    # Required arguments
+    parser.add_argument(
+        "inputfilenames",
+        type=str,
+        nargs="+",
+        help="One or more BIDS timecourse files",
+    )
+    parser.add_argument("outputfile", type=str, help="The root name of the output files.")
+
+    return parser
+
+
+def checkconsistency(fileinfo):
+    if len(fileinfo) == 1:
+        return True
+    for i in range(1, len(fileinfo)):
+        if (fileinfo[i][0] != fileinfo[0][0]) or (fileinfo[i][2] != fileinfo[0][2]):
+            return False
+    return True
+
+
+def main():
+    print("processing command line arguments")
+    # write out the command used
+    try:
+        args = _get_parser().parse_args()
+        argstowrite = sys.argv
+    except SystemExit:
+        print("Use --help option for detailed information on options.")
+        raise
+
+    # read data and initialize this and that
+    print("reading in data")
+    filestuff = []
+    for inputfilename in args.inputfilenames:
+        print(f"reading {inputfilename}")
+        filestuff.append(io.readbidstsv(inputfilename))
+    numfiles = len(filestuff)
+    starttimes = np.zeros(numfiles)
+    endtimes = np.zeros(numfiles)
+
+    if checkconsistency(filestuff):
+        # datasets are good and compatible
+        samplerate = filestuff[0][0]
+        columns = filestuff[0][2]
+        datasets = []
+        for i in range(numfiles):
+            starttimes[i] = filestuff[i][1]
+            datasets.append(filestuff[i][3])
+    else:
+        print("files are inconsistent and cannot be merged")
+        sys.exit()
+
+    print(f"{samplerate=}")
+    print(f"{columns=}")
+    for i in range(numfiles):
+        print(f"file {i}:")
+        print(f"\tstarts at {starttimes[i]}")
+        endtimes[i] = starttimes[i] + datasets[i].shape[1] / samplerate
+        print(f"\tand has {datasets[i].shape[1]} timepoints")
+        print(f"\tends at {endtimes[i]}")
+
+    overalltstart = np.min(starttimes)
+    overalltend = np.max(endtimes)
+    totalsamples = int((overalltend - overalltstart) * samplerate) + 1
+    print(f"{totalsamples=}, {overalltstart=}, {overalltend=}")
+
+    outputarray = np.zeros((totalsamples, datasets[0].shape[0]), dtype=float)
+    valid = np.zeros(totalsamples, dtype=int)
+    for i in range(numfiles):
+        startindex = int(np.round((starttimes[i] - starttimes[0]) * samplerate, 0))
+        endindex = startindex + datasets[i].shape[1]
+        print(f"source shape = {np.transpose(datasets[i].shape)}")
+        print(f"destination shape = {outputarray[startindex:endindex, :].shape}")
+        outputarray[startindex:endindex, :] = np.transpose(datasets[i])
+        valid[startindex:endindex] = 1
+
+    df = pd.DataFrame(data=outputarray)
+    df.columns = columns
+    df["valid"] = valid.tolist()
+    df.to_csv(f"{args.outputfile}.txt", sep="\t", index=False)
+
+    io.writebidstsv(
+        args.outputfile,
+        np.transpose(df.to_numpy()),
+        samplerate,
+        columns=df.columns.tolist(),
+        starttime=overalltstart,
+        debug=False,
+    )
+
+
+if __name__ == "__main__":
+    main()
