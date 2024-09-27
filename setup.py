@@ -33,6 +33,7 @@ modules_list = ["pynirs/bidsio", "pynirs/cbv_funcs", "pynirs/spo2funcs"]
 
 script_list = [
     "pynirs/scripts/plethproc",
+    "pynirs/scripts/mergebidstcfiles",
     "pynirs/scripts/denoise",
     "pynirs/scripts/unpackmedwatch",
     "pynirs/scripts/checkfnirs",
