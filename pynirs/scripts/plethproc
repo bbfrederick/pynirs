@@ -13,9 +13,9 @@ import numpy as np
 import pandas as pd
 import pylab as P
 
+import pynirs.bidsio as io
 import pynirs.cbv_funcs as cbvf
 import pynirs.spo2funcs as spo2
-import pynirs.bidsio as io
 
 DEFAULT_SAMPLERATE = 33.0
 DEFAULT_SDSPACE = 1.0
@@ -383,36 +383,49 @@ def main():
 
     # read data and initialize this and that
     print("reading in data")
+    thedatasets = []
+    rawtimeaxes = []
+    absstarttimes = []
     for inputfilename in inputfilenames:
         if not fileiscsv:
-            thedata = pd.read_csv(
-                inputfilename,
-                header=numlines,
-                skipfooter=3,
-                engine="python",
-                sep=r"\s+",
+            thedatasets.append(
+                pd.read_csv(
+                    inputfilename,
+                    header=numlines,
+                    skipfooter=3,
+                    engine="python",
+                    sep=r"\s+",
+                )
             )
             # read the absolute start time out of the header
             with open(inputfilename, "r") as f:
                 firstline = f.readline().strip()
                 dummy, hours, minutes, seconds = firstline.split(":")
-                absstarttime = float(hours) * 3600 + float(minutes) * 60 + float(seconds)
-                print(absstarttime)
+                absstarttimes.append(float(hours) * 3600 + float(minutes) * 60 + float(seconds))
+                print(absstarttimes[-1])
             if debug:
-                print(thedata)
+                print(thedatasets[-1])
             if insamplerate is None:
-                rawtimeaxis = thedata["Time"].values - thedata["Time"].values[0]
+                rawtimeaxes.append(
+                    thedatasets[-1]["Time"].values - thedatasets[-1]["Time"].values[0]
+                )
             else:
-                arraylen = len(thedata.index)
-                rawtimeaxis = np.linspace(
-                    0.0, arraylen / insamplerate, num=arraylen, endpoint=False
+                arraylen = len(thedatasets[-1].index)
+                rawtimeaxis.append(
+                    np.linspace(0.0, arraylen / insamplerate, num=arraylen, endpoint=False)
                 )
                 headernametype = "new"
         else:
-            thedata = pd.read_csv(inputfilename, header=0)
+            thedatasets.append(pd.read_csv(inputfilename, header=0))
             if debug:
-                print(thedata)
-            rawtimeaxis = thedata["timestamp"].values - thedata["timestamp"].values[0]
+                print(thedatasets[-1])
+            rawtimeaxes.append[
+                thedatasets[-1]["timestamp"].values - thedatasets[-1]["timestamp"].values[0]
+            ]
+            absstarttimes.append(0.0)
+    thedata = thedatasets[0]
+    rawtimeaxis = rawtimeaxes[0]
+    absstarttime = absstarttimes[0]
     print(f"{absstarttime=}")
     if outsamplerate < 0.0:
         outsamplerate = insamplerate
